@@ -12,4 +12,4 @@ void notDefined(){
     printf("flaco sos un pelotudo");
 }
 
-
+void movXD()   //   Santi hace desde MOV
