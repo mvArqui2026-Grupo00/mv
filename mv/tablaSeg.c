@@ -1,7 +1,7 @@
 #define CANT_SEGM 8
 
 typedef struct {
-    short int pos, tamaño; // 2 bytes cada elemento
-} segmento;
+    short int base, tamaño; // 2 bytes cada elemento
+} Segmento;
 
-segmento tablaSegm[CANT_SEGM];
+Segmento tablaSegm[CANT_SEGM];

@@ -1,7 +1,4 @@
-#include "funciones.c"
-#include "registros.c"
-#include "memoria.c"
-#include "tablaSeg.c"
+#include "puntFunc.c" #no hacemos include de las estructuras porque están incluidas en funciones.c
 #include <stdio.h>
 #include <string.h>
 // quitar los que no sean necesarios
@@ -15,13 +12,13 @@ void inicializarMemoria(short int tamCod, FILE *f) {
 }
 
 void inicializarTablaSegm(short int tamCod){
-    tablaSegm[0].pos = 0;
+    tablaSegm[0].base = 0;
     tablaSegm[0].tamaño = tamCod;
-    tablaSegm[1].pos = tamCod;
+    tablaSegm[1].base = tamCod;
     tablaSegm[1].tamaño = CANT_CELDAS - tamCod;
 
     for (int i = 2; i < 8; i++){
-        tablaSegm[i].pos = -1;
+        tablaSegm[i].base = -1;
         tablaSegm[i].tamaño = -1;
     }
 }
@@ -48,6 +45,7 @@ int main(char archivoBin[], char d[]){ // el segundo parámetro es un supuesto m
         inicializarMemoria(tamCod,f); // pasamos el puntero a archivo apuntando al inicio del "code segment"
         fclose(f);
         inicializarTablaSegm(tamCod);
+        inicializarPunteroFunciones();
 
         procesa();
         return 0;
