@@ -9,7 +9,7 @@
 // 1 función por mnemónico (28 mnémonicos + 5 sin definir (notDefined))
 
 void notDefined(){
-    printf("flaco sos un pelotudo");
+    printf("flaco sos un pelotudo");    // mira vos
 }
 
 
