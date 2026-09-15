@@ -2,20 +2,12 @@
 #include "memoria.c"
 #include "tablaSeg.c"
 
-//void devolverOperandos(int tipo1, int tipo2, int * op1,int * op2){
+//void devolverOperandos(){
 
-//  implementamos o no?
-
-//}
 
 // 1 función por mnemónico (28 mnémonicos + 5 sin definir (notDefined))
 
-//--------------    NO DEFINIDO  ---------------------
-
-void notDefined(){
-    printf("flaco sos un pelotudo");    // mira vos
-}
-
+// funciones auxiliares:
 int leerOperando(int descriptor){
     int tipo = (descriptor >> 24) & 0xFF;
     int datosOperando = descriptor & 0xFFFFFF;
@@ -53,53 +45,35 @@ void escribirOperando(int descriptor, int valor){
     }
 }
 
-//Carga un numero aleatorio entro 0 y el segundo operando al primer operando
-void rnd(){
-    int operandoDestino = registros[2]; // OP1: descriptor del operando A (destino)
-    int limite = leerOperando(registros[3]); // OP2: descriptor del operando B
-    int valor = rand() % (limite + 1); // número aleatorio entre 0 y limite (inclusive)
-    escribirOperando(operandoDestino, valor);
+void leerDeMemoria(int operandoMemoria){}
+
+void escribirEnMemoria(int operandoMemoria, int valor){}
+
+int calcularPunteroLogico(int operandoMemoria){
+    // return puntLogico
 }
 
-//Carga los 2 bytes menos significativos del primer operando (OP1), con los 2 bytes menos significativos del segundo operando (OP2)
-void ldl(){     
-    int operandoA = registros[2]; // OP1: destino
-    int operandoB = registros[3]; // OP2: fuente
-    int valorA = leerOperando(operandoA);
-    int valorB = leerOperando(operandoB);
-    int resultado = (valorA & 0xFFFF0000) | (valorB & 0xFFFF); // conserva los 16 bits altos de A, reemplaza los 16 bits bajos con los bajos de B
-    escribirOperando(operandoA, resultado);
+int calcularPunteroFisico(int puntLogico){
+    //return puntFisico;
 }
 
-//Carga los 2 bytes más significativos del primer operando (OP1), con los 2 bytes menos significativos del segundo operando (OP2).
-void ldh(){
-    int operandoA = registros[2]; // OP1: destino
-    int operandoB = registros[3]; // OP2: fuente
-    int valorA = leerOperando(operandoA);
-    int valorB = leerOperando(operandoB);
-    int resultado = (valorA & 0x0000FFFF) | ((valorB & 0xFFFF) << 16); // conserva los 16 bits bajos de A, reemplaza los 16 bits altos con los bajos de B
 
-    escribirOperando(operandoA, resultado);
+
+//--------------    NO DEFINIDO  ---------------------
+
+void notDefined(){
+    printf("flaco sos un pelotudo");    // mira vos
 }
 
-void swap(){
-    int descA = registros[2]; // OP1: descriptor original de A
-    int descB = registros[3]; // OP2: descriptor original de B
-    xor(); // XOR A, B  →  A = A ^ B
-    registros[2] = descB;
-    registros[3] = descA;
-    xor(); // XOR B, A  →  B = B ^ A
-    registros[2] = descA;
-    registros[3] = descB;
-    xor(); // XOR A, B  →  A = A ^ B
-}
+
+//--------------    UN OPERANDO   --------------------
 
 void sys(){
     int operando = registros[2]; // OP1: único operando (código de llamada al sistema)
     int numeroLlamada = leerOperando(operando);
 
     switch (numeroLlamada){
-        case 1: // READ
+            case 1: // READ
             sysRead();
             break;
         case 2: // WRITE
@@ -109,9 +83,7 @@ void sys(){
             break;
     }
 }
-void movXD(){}   //   Santi hace desde MOV
 
-// mauro:
 int negative(){
     if (registros[17] & 0x80000000) // CC band 1erBit
         return 1;
@@ -187,35 +159,70 @@ void not(){
     // *(punt)= aux;
 }
 
-void stop(){
-    registros[0] = -1; // ip = 0xFFFFFFFF
-}
-//--------------   DOS OPERANDOS  --------------------
-//  SANTI
-void mov()
-void add()
-void sub()
-void mul()
-void div()
-void cmp()
-void and()
-void or()
-void xor()
 
-//  NICO
-void swap()
-void shl()
-void shr()
-void sar()
-void ldl()
-void ldh()
-void rnd()
-
-//--------------    UN OPERANDO   --------------------
-void sys()
-
-//  funciones de mauro
 
 //--------------   SIN OPERANDOS  --------------------
 
-//  STOP de mauro
+void stop(){
+    registros[0] = -1; // ip = 0xFFFFFFFF
+}
+
+
+
+
+//--------------   DOS OPERANDOS  --------------------
+void mov(){}
+void add(){}
+void sub(){}
+void mul(){}
+void div(){}
+void cmp(){}
+void and(){}
+void or(){}
+void xor(){}
+
+void swap(){
+    int descA = registros[2]; // OP1: descriptor original de A
+    int descB = registros[3]; // OP2: descriptor original de B
+    xor(); // XOR A, B  →  A = A ^ B
+    registros[2] = descB;
+    registros[3] = descA;
+    xor(); // XOR B, A  →  B = B ^ A
+    registros[2] = descA;
+    registros[3] = descB;
+    xor(); // XOR A, B  →  A = A ^ B
+}
+
+void shl(){}
+void shr(){}
+void sar(){}
+
+
+//Carga los 2 bytes menos significativos del primer operando (OP1), con los 2 bytes menos significativos del segundo operando (OP2)
+void ldl(){     
+    int operandoA = registros[2]; // OP1: destino
+    int operandoB = registros[3]; // OP2: fuente
+    int valorA = leerOperando(operandoA);
+    int valorB = leerOperando(operandoB);
+    int resultado = (valorA & 0xFFFF0000) | (valorB & 0xFFFF); // conserva los 16 bits altos de A, reemplaza los 16 bits bajos con los bajos de B
+    escribirOperando(operandoA, resultado);
+}
+
+//Carga los 2 bytes más significativos del primer operando (OP1), con los 2 bytes menos significativos del segundo operando (OP2).
+void ldh(){
+    int operandoA = registros[2]; // OP1: destino
+    int operandoB = registros[3]; // OP2: fuente
+    int valorA = leerOperando(operandoA);
+    int valorB = leerOperando(operandoB);
+    int resultado = (valorA & 0x0000FFFF) | ((valorB & 0xFFFF) << 16); // conserva los 16 bits bajos de A, reemplaza los 16 bits altos con los bajos de B
+
+    escribirOperando(operandoA, resultado);
+}
+
+//Carga un numero aleatorio entro 0 y el segundo operando al primer operando
+void rnd(){
+    int operandoDestino = registros[2]; // OP1: descriptor del operando A (destino)
+    int limite = leerOperando(registros[3]); // OP2: descriptor del operando B
+    int valor = rand() % (limite + 1); // número aleatorio entre 0 y limite (inclusive)
+    escribirOperando(operandoDestino, valor);
+}
