@@ -64,11 +64,11 @@ void escribirOperando(int operando, int valor, int cantBytes){
 
 void leerDeMemoria(){
     int n; // cant bytes a leer
-    n = devolverByte(registros[5],3);
-    n = n << 8;
+    //n = devolverByte(registros[5],3);
+    //n = n << 8;
     n |= devolverByte(registros[5],2);
 
-    int aux = 0; // por las dudas que el n sea 0, hay que verificarlo en el testing
+    int aux = 0;
     for(int i=0; i < n; i++){
         aux = aux << 8;
         aux = aux | memoria[registros[5] + i];
@@ -81,8 +81,8 @@ void escribirEnMemoria(){
     int mbr;
     int n; // cant bytes a escribir
     mbr = registros[6];
-    n = devolverByte(registros[5],3);
-    n = n << 8;
+    //n = devolverByte(registros[5],3);
+    //n = n << 8;
     n |= devolverByte(registros[5],2);
 
     int aux = 0; // por las dudas que el n sea 0, hay que verificarlo en el testing
@@ -205,8 +205,8 @@ void sysWrite(){
             for (int b = 31; b >= 0; b--){
                 int bit = (valor >> b) & 1;
                 if (bit == 1) 
-                  empezo = 1;
-                  if (empezo) 
+                    empezo = 1;
+                if (empezo) 
                     printf("%d", bit);
             }
             if (!empezo) 
@@ -239,7 +239,7 @@ void sys(){
     int numeroLlamada = leerOperando(operando,4);
 
     switch (numeroLlamada){
-            case 1: // READ
+        case 1: // READ
             sysRead();
             break;
         case 2: // WRITE
@@ -279,7 +279,7 @@ void jmp(){
     int aux = leerOperando(registros[2],4); // leer op1, 4 bytes
     aux = aux << 8;
     aux |= 26; // registro CS
-    calcularPunteroLogico(aux);    
+    calcularPunteroLogico(aux);
     calcularPunteroFisico(4); // está bien esto?? no voy a leer bytes, solo calcular la posFisica
     registros[0] = registros[5]; // IP = MAR
     // acá sería necesario hacer una validación para ver que no nos caemos del code segment
@@ -456,17 +456,12 @@ void xor(){
 }
 
 void swap(){
-    int descA = registros[2]; // OP1: descriptor original de A
-    int descB = registros[3]; // OP2: descriptor original de B
-    xor(); // XOR A, B  →  A = A ^ B
-    registros[2] = descB;
-    registros[3] = descA;
-    xor(); // XOR B, A  →  B = B ^ A
-    registros[2] = descA;
-    registros[3] = descB;
-    xor(); // XOR A, B  →  A = A ^ B
+    int a = leerOperando(registros[2]); // valor de A
+    int b = leerOperando(registros[3]); // valor de B
 
-    CC();
+    escribirOperando(registros[2], b);  // A = B
+    escribirOperando(registros[3], a);  // B = A
+    setCC(b, 0, 0);  
 }
 
 void shl(){
