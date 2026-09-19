@@ -6,7 +6,7 @@
 #include "disassembler.c"
 
 void paso(){
-
+    
 }
 
 void procesa(){
