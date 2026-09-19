@@ -3,12 +3,12 @@
 #include "tablaSeg.c"
 #include <stdio.h>
 
-//void devolverOperandos(){
+//  CONSTANTES: LIMITES INT
+#define INT_MAX 0x7FFFFFFF
+#define INT_MIN 0x80000000
 
+//  FUNCIONES AUXILIARES
 
-// 1 función por mnemónico (28 mnémonicos + 5 sin definir (notDefined))
-
-// funciones auxiliares:
 int leerOperando(int descriptor){
     int tipo = (descriptor >> 24) & 0xFF;
     int datosOperando = descriptor & 0xFFFFFF;
@@ -46,6 +46,7 @@ void escribirOperando(int descriptor, int valor){
     }
 }
 
+//  A DESARROLLAR
 void leerDeMemoria(int operandoMemoria){}
 
 void escribirEnMemoria(int operandoMemoria, int valor){}
@@ -66,6 +67,12 @@ void notDefined(){
     printf("flaco sos un pelotudo");    // mira vos
 }
 
+
+//--------------   SIN OPERANDOS  --------------------
+
+void stop(){
+    registros[0] = -1; // ip = 0xFFFFFFFF
+}
 
 //--------------    UN OPERANDO   --------------------
 
@@ -219,7 +226,7 @@ void jp(){
     if(!negative() && !cero()){
         jmp();
     }
-}   
+}
 void jn(){
     if (negative())
         jmp();
@@ -255,29 +262,134 @@ void not(){
     //aux = devolverValor(); // función a implementar...?
     aux = ~aux; // ~ -> operador not binario
     // *(punt)= aux;
+
+    CC();
 }
-
-
-
-//--------------   SIN OPERANDOS  --------------------
-
-void stop(){
-    registros[0] = -1; // ip = 0xFFFFFFFF
-}
-
-
 
 
 //--------------   DOS OPERANDOS  --------------------
-void mov(){}
-void add(){}
-void sub(){}
-void mul(){}
-void div(){}
-void cmp(){}
-void and(){}
-void or(){}
-void xor(){}
+
+void setCC(int val1, int val2, int ans){    //  Modifica CC (registro 17)
+    aux = 0;
+    if( ans == 0 )
+        aux = 0b0100;                   //  Z: Cero
+    else
+        if( ans < 0 )
+            aux = 0b1000;               //  N: Negativo
+
+    if((val1 > 0) && (val2 > 0))
+        if( val1 > INT_MAX - val2)
+            aux = aux | 0b0001;         //  V: Overflow
+    else
+        if((val1 < 0) && (val2 < 0))    //  V: Overflow
+            if( val1 < INT_MIN - val2)
+                aux = aux | 0b0001;
+
+                                        // CARRY ???
+
+    aux = aux << 28;    //  NZCV << 28  =  NZCV0000 00000000 00000000 00000000
+    registros[17] = aux //  Guarda AUX en REGISTRO CC
+}
+
+
+void mov(){
+    int valor2 = leerOperando(registros[3]);    //  Guarda valor de OP2 en valor2
+    int valor1 = valor2;
+
+    setCC(valor1, valor2, valor1);
+
+    escribirOperando(registros[2], valor1); //  Escribe valor2 en OP1;
+}
+
+void add(){
+    int valor1 = leerOperando(registros[2]);//  Guarda valor de OP1 en valor1
+    int valor2 = leerOperando(registros[3]);//  Guarda valor de OP2 en valor2
+    int suma = valor1 + valor2;
+
+    setCC(valor1, valor2, suma);
+
+    escribirOperando(registros[2], suma); //  Escribe 'suma' en OP1;
+}
+
+void sub(){
+    int valor1 = leerOperando(registros[2]);
+    int valor2 = leerOperando(registros[3]);
+    int resta = valor1 - valor2;
+
+    setCC(valor1, valor2, resta);
+
+    escribirOperando(registros[2], resta); //  Escribe 'resta' en OP1;
+}
+
+void mul(){
+    int valor1 = leerOperando(registros[2]);
+    int valor2 = leerOperando(registros[3]);
+    int producto = valor1 * valor2;             //  Guarda multiplicacion en 'producto'
+
+    setCC(valor1, valor2, producto);
+
+    escribirOperando(registros[2], producto);   //  Escribe 'producto' en OP1;
+}
+
+void div(){
+    int valor1 = leerOperando(registros[2]);
+    int valor2 = leerOperando(registros[3]);
+    int cociente;
+    int resto;
+    //  !!!
+    if (valor2 != 0){                 //  Verifica si el contenido de OP2 es 0
+        cociente = valor1 / valor2;   //  Realiza DIVISION ENTERA
+        resto = valor1 % valor2;      //  Guarda el RESTO
+
+        setCC(valor1, valor2, cociente);
+
+        escribirOperando(registros[2], cociente);   //  Guarda DIVISION ENTERA en OP1
+        escribirOperando(registros[16], resto);     //  Guarda RESTO en AC
+    }
+    else
+        //  Si el valor del operando 2 ES CERO,
+        //  DETIENE EL PROGRAMA POR COMPLETO
+        stop();
+}
+
+void cmp(){
+    int valor1 = leerOperando(registros[2]);
+    int valor2 = leerOperando(registros[3]);
+    int diferencia = valor1 - valor2;       //  Realiza DIFERENCIA entre valor1 y valor2
+
+    setCC(valor1, valor2, diferencia);      //  Modifica CC con respecto a la diferencia anterior
+}
+
+void and(){
+    int valor1 = leerOperando(registros[2]);
+    int valor2 = leerOperando(registros[3]);
+    int ans = valor1 & valor2;              //  Guarda AND LOGICO en 'ans'
+
+    setCC(valor1, valor2, ans);
+
+    escribirOperando(registros[2], ans);    //  Escribe 'ans' en OP1;
+}
+
+void or(){
+    int valor1 = leerOperando(registros[2]);
+    int valor2 = leerOperando(registros[3]);
+    int ans = valor1 | valor2;              //  Guarda OR LOGICO en 'ans'
+
+    setCC(valor1, valor2, ans);
+
+    escribirOperando(registros[2], ans);    //  Escribe 'ans' en OP1;
+
+}
+
+void xor(){
+    int valor1 = leerOperando(registros[2]);
+    int valor2 = leerOperando(registros[3]);
+    int ans = valor1 ^ valor2;              //  Guarda XOR LOGICO en 'ans'
+
+    setCC(valor1, valor2, ans);
+
+    escribirOperando(registros[2], ans);    //  Escribe 'ans' en OP1;
+}
 
 void swap(){
     int descA = registros[2]; // OP1: descriptor original de A
@@ -289,6 +401,8 @@ void swap(){
     registros[2] = descA;
     registros[3] = descB;
     xor(); // XOR A, B  →  A = A ^ B
+
+    CC();
 }
 
 void shl(){
@@ -326,7 +440,7 @@ void sar(){
 
 
 //Carga los 2 bytes menos significativos del primer operando (OP1), con los 2 bytes menos significativos del segundo operando (OP2)
-void ldl(){     
+void ldl(){
     int operandoA = registros[2]; // OP1: destino
     int operandoB = registros[3]; // OP2: fuente
     int valorA = leerOperando(operandoA);
