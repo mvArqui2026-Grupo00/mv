@@ -2,6 +2,10 @@
 #include "memoria.c"
 #include "tablaSeg.c"
 
+//  CONSTANTES: LIMITES INT
+#define INT_MAX 0x7FFFFFFF
+#define INT_MIN 0x80000000
+
 //  FUNCIONES AUXILIARES
 
 int leerOperando(int descriptor){
@@ -167,100 +171,127 @@ void not(){
 
 //--------------   DOS OPERANDOS  --------------------
 
-void CC(){    //  Modifica CC (registro 17)
+void setCC(int val1, int val2, int ans){    //  Modifica CC (registro 17)
+    aux = 0;
+    if( ans == 0 )
+        aux = 0b0100;                   //  Z: Cero
+    else
+        if( ans < 0 )
+            aux = 0b1000;               //  N: Negativo
 
+    if((val1 > 0) && (val2 > 0))
+        if( val1 > INT_MAX - val2)
+            aux = aux | 0b0001;         //  V: Overflow
+    else
+        if((val1 < 0) && (val2 < 0))    //  V: Overflow
+            if( val1 < INT_MIN - val2)
+                aux = aux | 0b0001;
+
+                                        // CARRY ???
+
+    aux = aux << 28;    //  NZCV << 28  =  NZCV0000 00000000 00000000 00000000
+    registros[17] = aux //  Guarda AUX en REGISTRO CC
 }
 
 
 void mov(){
-    int valor2;
-    valor2 = leerOperando(registros[3]);    //  Guarda valor de OP2 en valor2
-    escribirOperando(registros[2], valor2); //  Escribe valor2 en OP1;
+    int valor2 = leerOperando(registros[3]);    //  Guarda valor de OP2 en valor2
+    int valor1 = valor2;
 
-    CC();
+    setCC(valor1, valor2, valor1);
+
+    escribirOperando(registros[2], valor1); //  Escribe valor2 en OP1;
 }
 
 void add(){
     int valor1 = leerOperando(registros[2]);//  Guarda valor de OP1 en valor1
     int valor2 = leerOperando(registros[3]);//  Guarda valor de OP2 en valor2
-    valor1 += valor2;                       //  Guarda suma en valor1
-    escribirOperando(registros[2], valor1); //  Escribe valor1 en OP1;
+    int suma = valor1 + valor2;
 
-    CC();
+    setCC(valor1, valor2, suma);
+
+    escribirOperando(registros[2], suma); //  Escribe 'suma' en OP1;
 }
 
 void sub(){
     int valor1 = leerOperando(registros[2]);
     int valor2 = leerOperando(registros[3]);
-    valor1 -= valor2;                       //  Guarda resta en valor1;
-    escribirOperando(registros[2], valor1); //  Escribe valor1 en OP1;
+    int resta = valor1 - valor2;
 
-    CC();
+    setCC(valor1, valor2, resta);
+
+    escribirOperando(registros[2], resta); //  Escribe 'resta' en OP1;
 }
 
 void mul(){
     int valor1 = leerOperando(registros[2]);
     int valor2 = leerOperando(registros[3]);
-    valor1 *= valor2;                       //  Guarda multiplicacion en valor1;
-    escribirOperando(registros[2], valor1); //  Escribe valor1 en OP1;
+    int producto = valor1 * valor2;             //  Guarda multiplicacion en 'producto'
 
-    CC();
+    setCC(valor1, valor2, producto);
+
+    escribirOperando(registros[2], producto);   //  Escribe 'producto' en OP1;
 }
 
 void div(){
     int valor1 = leerOperando(registros[2]);
     int valor2 = leerOperando(registros[3]);
-    int resultado;
+    int cociente;
     int resto;
     //  !!!
-    if (valor2 != 0){ //  Verifica si el contenido de OP2 es 0
+    if (valor2 != 0){                 //  Verifica si el contenido de OP2 es 0
+        cociente = valor1 / valor2;   //  Realiza DIVISION ENTERA
+        resto = valor1 % valor2;      //  Guarda el RESTO
 
-        resultado = valor1 / valor2;            //  Realiza DIVISION ENTERA
-        resto = valor1 % valor2;                //  Guarda el RESTO
-        escribirOperando(registros[2], valor1); //  Guarda DIVISION ENTERA en OP1
-        escribirOperando(registros[16], resto); //  Guarda RESTO en AC
+        setCC(valor1, valor2, cociente);
 
-        CC();
+        escribirOperando(registros[2], cociente);   //  Guarda DIVISION ENTERA en OP1
+        escribirOperando(registros[16], resto);     //  Guarda RESTO en AC
     }
     else
-        stop(); //  Si el valor del operando 2 ES CERO, DETIENE EL PROGRAMA POR COMPLETO
+        //  Si el valor del operando 2 ES CERO,
+        //  DETIENE EL PROGRAMA POR COMPLETO
+        stop();
 }
 
 void cmp(){
     int valor1 = leerOperando(registros[2]);
     int valor2 = leerOperando(registros[3]);
-    int aux = valor1 - valor2;              //  Realiza DIFERENCIA entre valor1 y valor2
+    int diferencia = valor1 - valor2;       //  Realiza DIFERENCIA entre valor1 y valor2
 
-    CC(aux);                                //  Modifica CC con respecto a la diferencia anterior
+    setCC(valor1, valor2, diferencia);      //  Modifica CC con respecto a la diferencia anterior
 }
 
 void and(){
     int valor1 = leerOperando(registros[2]);
     int valor2 = leerOperando(registros[3]);
-    valor1 = valor1 & valor2;               //  Guarda AND LOGICO en valor1
-    escribirOperando(registros[2], valor1); //  Escribe valor1 en OP1;
+    int ans = valor1 & valor2;              //  Guarda AND LOGICO en 'ans'
 
-    CC();
+    setCC(valor1, valor2, ans);
+
+    escribirOperando(registros[2], ans);    //  Escribe 'ans' en OP1;
 }
 
 void or(){
     int valor1 = leerOperando(registros[2]);
     int valor2 = leerOperando(registros[3]);
-    valor1 = valor1 | valor2;               //  Guarda OR LOGICO en valor1
-    escribirOperando(registros[2], valor1); //  Escribe valor1 en OP1;
+    int ans = valor1 | valor2;              //  Guarda OR LOGICO en 'ans'
 
-    CC();
+    setCC(valor1, valor2, ans);
+
+    escribirOperando(registros[2], ans);    //  Escribe 'ans' en OP1;
+
 }
 
 void xor(){
     int valor1 = leerOperando(registros[2]);
     int valor2 = leerOperando(registros[3]);
-    valor1 = valor1 ^ valor2;               //  Guarda XOR LOGICO en valor1
-    escribirOperando(registros[2], valor1); //  Escribe valor1 en OP1;
+    int ans = valor1 ^ valor2;              //  Guarda XOR LOGICO en 'ans'
 
-    CC();
+    setCC(valor1, valor2, ans);
+
+    escribirOperando(registros[2], ans);    //  Escribe 'ans' en OP1;
 }
-
 
 void swap(){
     int descA = registros[2]; // OP1: descriptor original de A
