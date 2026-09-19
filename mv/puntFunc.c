@@ -1,5 +1,6 @@
 #include "funciones.c"
-#define CANT_FUNC 48
+#include "disassembler.c"
+#define CANT_FUNC 32
 
 typedef void (*PuntFunc)(); // plantilla de la cabecera de las funciones
 

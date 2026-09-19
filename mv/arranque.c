@@ -1,7 +1,4 @@
-#include "puntFunc.c" #no hacemos include de las estructuras porque están incluidas en funciones.c
-#include <stdio.h>
-#include <string.h>
-// quitar los que no sean necesarios
+#include "procesador.c" //no hacemos include de los demás módulos o librerias porque ya están incluidas en la concatenación de include...
 
 void inicializarMemoria(short int tamCod, FILE *f) {
     char byte;
@@ -24,13 +21,14 @@ void inicializarTablaSegm(short int tamCod){
 }
 
 void inicializarRegistros(){
-    // a desarrolar
-    // inicializar ds y cs
-    // inicializar ip
-    //creo que ningún registro más...
+    registros[26] = 0x00000000; // cs
+    registros[27] = 0x00010000; // ds
+    registros[0] = registros[26] ; // ip
 }
 
-int main(char archivoBin[], char d[]){ // el segundo parámetro es un supuesto mío de como sería el "-d", pero no estoy seguro que sea así ~Mauro
+int main(int argc, char *argv[]){ // el segundo parámetro es un supuesto mío de como sería el "-d", pero no estoy seguro que sea así ~Mauro
+    // arg0 -> "mv"
+    char *archivoBin = argv[1]; 
     FILE *f = fopen(archivoBin,"rb");
     char identif[5];
     char version;
@@ -46,6 +44,8 @@ int main(char archivoBin[], char d[]){ // el segundo parámetro es un supuesto m
         fclose(f);
         inicializarTablaSegm(tamCod);
         inicializarPunteroFunciones();
+
+        disassembler = (argc >= 3 && argv[2] == "-d");
 
         procesa();
         return 0;
