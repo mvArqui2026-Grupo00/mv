@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <math.h>
 
 //  CONSTANTES: LIMITES INT
 #define INT_MAX 0x7FFFFFFF
@@ -105,7 +106,7 @@ void calcularPunteroLogico(int operandoMemoria){ // configura el LAR
     int aux = devolverByte(operandoMemoria,2);
     aux = aux << 1;
     aux = aux | devolverByte(operandoMemoria,1);
-    puntLog += aux; // acá habría que verificar si no nos caímos del segmento   
+    puntLog += aux; // acá habría que verificar si no nos caímos del segmento
     registros[4] = puntLog; // reg[4] -> LAR
 }
 
@@ -176,10 +177,9 @@ void sysRead(){
         }
         escribirMBR(valor); // config mbr
         escribirEnMemoria();
-        direccionLogica += tamano;        
+        direccionLogica += tamano;
     }
 }
-
 void sysWrite(){
     int direccionLogica = registros[13]; // EDX
     int modo = registros[10];            // EAX (puede tener varios modos a la vez)
@@ -203,20 +203,20 @@ void sysWrite(){
             printf(" 0b");
             for (int b = 31; b >= 0; b--){
                 int bit = (valor >> b) & 1;
-                if (bit == 1) 
+                if (bit == 1)
                     empezo = 1;
-                if (empezo) 
+                if (empezo)
                     printf("%d", bit);
             }
-            if (!empezo) 
+            if (!empezo)
               printf("0"); // el valor era 0
         }
-        if (modo & 0x08) 
+        if (modo & 0x08)
           printf(" 0x%X", valor); // hexadecimal
 
-        if (modo & 0x04) 
+        if (modo & 0x04)
           printf(" 0o%o", valor); // octal
-          
+
         if (modo & 0x02){ // caracteres
             printf(" ");
             for (int b = 0; b < tamano; b++){
@@ -227,14 +227,13 @@ void sysWrite(){
                     printf("."); // no imprimible
             }
         }
-        if (modo & 0x01) 
+        if (modo & 0x01)
           printf(" %d", valor); // decimal
 
         printf("\n");
         direccionLogica += tamano;  // avanza TA BIEN
     }
 }
-
 void sys(){
     int operando = registros[2]; // OP1: único operando (código de llamada al sistema)
     int numeroLlamada = leerOperando(operando,4);
@@ -286,7 +285,6 @@ void jmp(){
     // acá sería necesario hacer una validación para ver que no nos caemos del code segment
     // o en su defecto, llamar a una función que realice esta asignación y validación...
 }
-
 void jp(){
     if(!negative() && !cero()){
         jmp();
@@ -321,18 +319,17 @@ void jnz(){
         jmp();
     }
 }
-
 void not(){
     int aux = leerOperando(registros[2],4);
     aux = ~aux;
     escribirOperando(registros[2], aux, 4);
-    setCC(aux,0,0); // solo chequea si es negativo o cero    
+    setCC(aux,0,0); // solo chequea si es negativo o cero
 }
 
 
 //--------------   DOS OPERANDOS  --------------------
 
-void setCC(int resultado, int carry, int overflow){    //  Modifica CC (registro 17)
+void setCC(int resultado, int C, int V){    //  Modifica CC (registro 17)
     int aux = 0;
     if(resultado == 0)
         aux = 0b0100;                   //  Z: Cero
@@ -340,65 +337,115 @@ void setCC(int resultado, int carry, int overflow){    //  Modifica CC (registro
         if(resultado < 0)
             aux = 0b1000;               //  N: Negativo
 
-    aux |= 0b0010 * carry;
-    aux |= 0b0010 * overflow;
+    aux |= 0b0010 * C;                  //  C: Carry
+    aux |= 0b0010 * V;                  //  V: Overflow
 
     aux = aux << 28;    //  NZCV << 28  =  0b NZCV0000 00000000 00000000 00000000
     registros[17] = aux; //  Guarda AUX en REGISTRO CC
 }
-
-
 void mov(){
-    int valor = leerOperando(registros[3],4);    //  Guarda valor de OP2 en valor
-    setCC(valor, 0, 0); // analizo el valor (si es negativo o 0)
-    escribirOperando(registros[2], valor,4); //  Escribe valor en OP1;
+    int valor = leerOperando(registros[3], 4);      //  Guarda valor de OP2 en valor
+    setCC(valor, 0, 0);                             //  Modifico CC (No hay CARRY ni OVERFLOW)
+    escribirOperando(registros[2], valor, 4);       //  Escribe valor en OP1;
 }
-
 void add(){
-    int valor1 = leerOperando(registros[2],4);//  Guarda valor de OP1 en valor1
-    int valor2 = leerOperando(registros[3],4);//  Guarda valor de OP2 en valor2
+    int C = 0;
+    int V = 0;
+    int valor1 = leerOperando(registros[2],4);  //  Guarda valor de OP1 en valor1
+    int valor2 = leerOperando(registros[3],4);  //  Guarda valor de OP2 en valor2
+
     int suma = valor1 + valor2;
 
-    int carry;
-    int overflow;
-    setCC(suma,carry, overflow);
-    escribirOperando(registros[2], suma, 4); //  Escribe 'suma' en OP1;
-}
+    if((valor1 > 0 && valor2 > 0) && (valor1 > INT_MAX-valor2))           //  Verifica OVERFLOW
+        V = 1;
+    else
+        if((valor1 < 0  &&  valor2 < 0) && (valor1 < INT_MIN-valor2))
+            V = 1;
 
+    long int temp = (long int)valor1+valor2;    //  Verifica CARRY
+    if((temp >> 32) != 0)
+        C = 1;
+
+    setCC( suma, C, V );                        //  Modifica CC
+    escribirOperando(registros[2], suma, 4);    //  Escribe 'suma' en OP1;
+}
 void sub(){
+    int C = 0;
+    int V = 0;
     int valor1 = leerOperando(registros[2],4);
     int valor2 = leerOperando(registros[3],4);
-    int resta = valor1 - valor2;
 
-    int carry;
-    int overflow;
+    valor2 = (~valor2)+1;           //  Pasa COMPLEMENTO A 2 a 'Valor2'
 
-    setCC(resta, carry, overflow);
-    escribirOperando(registros[2], resta,4); //  Escribe 'resta' en OP1;
+    int resta = valor1 + valor2;    //  A + (-B)
+
+    if((valor1 > 0 && valor2 > 0) && (valor1 > INT_MAX-valor2))           //  Verifica OVERFLOW
+        V = 1;
+    else
+        if((valor1 < 0  &&  valor2 < 0) && (valor1 < INT_MIN-valor2))
+            V = 1;
+
+    long int temp = (long int)valor1+valor2;    //  Verifica CARRY
+    if((temp >> 32) != 0)
+        C = 1;
+
+    setCC(resta, C, V);
+    escribirOperando(registros[2], resta, 4); //  Escribe 'resta' en OP1;
 }
+void mul(){     /// REVISAR
+    int C = 0;
+    int V = 0;
 
-void mul(){
     int valor1 = leerOperando(registros[2],4);
     int valor2 = leerOperando(registros[3],4);
-    int producto = valor1 * valor2;             //  Guarda multiplicacion en 'producto'
+    long int ans = (long int)valor1*valor2;
 
-    setCC(producto, carry, overflow);
-    escribirOperando(registros[2], producto,4);   //  Escribe 'producto' en OP1;
+    unsigned long int modA = (unsigned long int)abs(valor1);
+    unsigned long int modB = (unsigned long int)abs(valor2);
+    unsigned long int modAns = modA * modB;
+
+    if(modAns > INT_MAX)
+        C = 1;
+
+    if(ans > INT_MAX || ans < INT_MIN)  //  Verifica OVERFLOW
+        V = 1;
+
+    setCC((int)ans, C, V);
+    escribirOperando(registros[2], ans,4);   //  Escribe 'producto' en OP1;
+
+/*  ESTO CREO QUE YA NO SIRVE
+
+    long temp = (long)valor1 * (long)valor2;    //  Verifica CARRY
+    if((temp >> 32) != 0)
+        C = 1;
+
+    int modA = abs(valor1);
+    int modB = abs(valor2);
+
+    int ans = modA * modB;
+
+    if(ans < 0)                                 // Verifica OVERFLOW
+        V = 1;
+    if(((valor1 > 0) && (valor2 < 0)) || ((valor1 < 0) && (valor2 > 0)))
+        ans = ans*(-1);
+*/
 }
-
 void div(){
+    int C = 0; // No tiene CARRY
+    int V = 0;
     int valor1 = leerOperando(registros[2],4);
     int valor2 = leerOperando(registros[3],4);
     int cociente;
     int resto;
-    //  !!!
+
     if (valor2 != 0){                 //  Verifica si el contenido de OP2 es 0
         cociente = valor1 / valor2;   //  Realiza DIVISION ENTERA
         resto = valor1 % valor2;      //  Guarda el RESTO
 
-        int carry;
-        int overflow;
-        setCC(cociente, carry, overflow);
+        if(valor1 == INT_MIN && b==-1)//    Verifica OVERFLOW
+            V = 1;
+
+        setCC(cociente, C, V);
         escribirOperando(registros[2], cociente,4);   //  Guarda DIVISION ENTERA en OP1
         escribirOperando(registros[16], resto,4);     //  Guarda RESTO en AC
     }
@@ -407,17 +454,28 @@ void div(){
         //  DETIENE EL PROGRAMA POR COMPLETO
         stop();
 }
-
-void cmp(){
+void cmp(){     /// REVISAR
+    int C = 0;
+    int V = 0;
     int valor1 = leerOperando(registros[2],4);
     int valor2 = leerOperando(registros[3],4);
-    int diferencia = valor1 - valor2;       //  Realiza DIFERENCIA entre valor1 y valor2
 
-    int carry;
-    int overflow;
-    setCC(diferencia, carry, overflow);      //  Modifica CC con respecto a la diferencia anterior
+    valor2 = (~valor2)+1;           //  Pasa COMPLEMENTO A 2 a 'Valor2'
+
+    int diferencia = valor1 + valor2;    //  A + (-B)
+
+    if((valor1 > 0 && valor2 > 0) && (valor1 > INT_MAX-valor2))           //  Verifica OVERFLOW
+        V = 1;
+    else
+        if((valor1 < 0  &&  valor2 < 0) && (valor1 < INT_MIN-valor2))
+            V = 1;
+
+    long int temp = (long int)valor1+valor2;    //  Verifica CARRY
+    if((temp >> 32) != 0)
+        C = 1;
+
+    setCC(diferencia, C, V);     //  Modifica CC con respecto a la diferencia anterior
 }
-
 void and(){
     int valor1 = leerOperando(registros[2],4);
     int valor2 = leerOperando(registros[3],4);
@@ -426,7 +484,6 @@ void and(){
     setCC(ans,0,0);
     escribirOperando(registros[2], ans, 4);    //  Escribe 'ans' en OP1;
 }
-
 void or(){
     int valor1 = leerOperando(registros[2],4);
     int valor2 = leerOperando(registros[3],4);
@@ -435,7 +492,6 @@ void or(){
     setCC(ans,0,0);
     escribirOperando(registros[2], ans, 4);    //  Escribe 'ans' en OP1;
 }
-
 void xor(){
     int valor1 = leerOperando(registros[2],4);
     int valor2 = leerOperando(registros[3],4);
@@ -444,41 +500,46 @@ void xor(){
     setCC(ans,0,0);
     escribirOperando(registros[2], ans, 4);    //  Escribe 'ans' en OP1;
 }
-
 void swap(){
     int a = leerOperando(registros[2],4); // valor de A
     int b = leerOperando(registros[3],4); // valor de B
 
     escribirOperando(registros[2], b,4);  // A = B
     escribirOperando(registros[3], a,4);  // B = A
-    setCC(b, 0, 0); // solo chequea si es negativo o cero      
-}
 
+    setCC(b, 0, 0); // solo chequea si es negativo o cero
+}
 void shl(){
-    int operando = registros[2]; // op1
-    int valor = leerOperando(operando,4); // valor real de A
-    int cantidad = leerOperando(registros[3],4); // op2
+    int C = 0;
+    int V = 0;
+    int valor1 = leerOperando(registros[2], 4);
+    int valor2 = leerOperando(registros[3], 4);
 
-    valor = valor << cantidad;
+    int ans = valor1 << valor2; //  Realiza SHIFT
 
-    int carry;
-    int overflow;
-    escribirOperando(operando, valor, 4);
-    setCC(valor, carry, overflow);
+    long int temp = (long int)a<<b;     //  Verifica CARRY
+    if((temp>>32) != 0)
+        C = 1;
+    if(((valor1 > 0) && (ans < a)) || ((valor1 < 0) && (ans > a)))
+        V = 1;                  //  Verifica OVERFLOW
+
+    setCC(ans, C, V);
+    escribirOperando(registros[2], ans, 4);   //  Escribe 'ans' en 'OP1'
 }
-
 void shr(){
-    int operando = registros[2]; // op1
-    int valor = leerOperando(operando,4); // valor real de A (no el descriptor)
-    int cantidad = leerOperando(registros[3],4); // op2
+    int C = 0;  //  NO TIENE CARRY
+    int V = 0;
+    int valor1 = leerOperando(registros[2], 4);
+    int valor2 = leerOperando(registros[3], 4);
 
-    valor = valor >> cantidad;
+    int ans = valor1 >> valor2;                 //  Realiza shift
 
-    int overflow;
-    escribirOperando(operando, valor, 4);
-    setCC(valor, 0, overflow);
+    if((valor1 < 0) && (valor2 > 0))
+        V = 1;                                  //  Verifica OVERFLOW
+
+    setCC(ans, C, V);
+    escribirOperando(registros[2], ans, 4);     //  Escribe 'ans' en 'OP1'
 }
-
 void sar(){
     int operando = registros[2]; // op1
     unsigned int valor = leerOperando(operando,4); // valor real de A
@@ -489,8 +550,6 @@ void sar(){
     escribirOperando(operando, valor,4);
     setCC(valor, 0, 0);
 }
-
-
 //Carga los 2 bytes menos significativos del primer operando (OP1), con los 2 bytes menos significativos del segundo operando (OP2)
 void ldl(){
     int operandoA = registros[2]; // OP1: destino
@@ -500,9 +559,8 @@ void ldl(){
     int resultado = (valorA & 0xFFFF0000) | (valorB & 0xFFFF); // conserva los 16 bits altos de A, reemplaza los 16 bits bajos con los bajos de B
 
     escribirOperando(operandoA, resultado,4);
-    setCC(resultado, 0, 0); // solo chequea si es negativo o cero    
+    setCC(resultado, 0, 0); // solo chequea si es negativo o cero
 }
-
 //Carga los 2 bytes más significativos del primer operando (OP1), con los 2 bytes menos significativos del segundo operando (OP2).
 void ldh(){
     int operandoA = registros[2]; // OP1: destino
@@ -514,7 +572,6 @@ void ldh(){
     escribirOperando(operandoA, resultado,4);
     setCC(resultado, 0, 0); // solo chequea si es negativo o cero
 }
-
 //Carga un numero aleatorio entre 0 y el segundo operando, al primer operando
 void rnd(){
     int operandoDestino = registros[2]; // OP1: descriptor del operando A (destino)
