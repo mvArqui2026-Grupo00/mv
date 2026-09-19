@@ -1,6 +1,7 @@
 #include "registros.c"
 #include "memoria.c"
 #include "tablaSeg.c"
+#include <stdio.h>
 
 //void devolverOperandos(){
 
@@ -67,6 +68,103 @@ void notDefined(){
 
 
 //--------------    UN OPERANDO   --------------------
+
+void sysRead(){
+    int direccionLogica = registros[13]; // EDX
+    int modo = registros[10];            // EAX
+    int cantidad = registros[12] & 0xFFFF;       // ECX (2 bytes bajos): cantidad de valores
+    int tamano = (registros[12] >> 16) & 0xFFFF; // ECX (2 bytes altos): tamaño de cada valor
+
+    for (int i = 0; i < cantidad; i++){
+        int dirFisica = traducirDireccion(direccionLogica, tamano);
+        if (dirFisica < 0) return; // fallo de segmento
+
+        int valor = 0;
+        char texto[33]; // solo para el binario: hasta 32 bits + '\0'
+
+        printf("[%04X]: ", dirFisica);
+        switch (modo){
+            case 1: // decimal
+                scanf("%d", &valor);
+                break;
+            case 2: // caracter
+                scanf(" %c", (char*)&valor);
+                break;
+            case 4: // octal
+                scanf("%o", &valor);
+                break;
+            case 8: // hexadecimal
+                scanf("%x", &valor);
+                break;
+            case 16: // binario: se lee como texto y se arma el numero bit a bit
+                scanf("%32s", texto);
+                for (int k = 0; texto[k] != '\0'; k++)
+                    valor = (valor << 1) | (texto[k] - '0');
+                break;
+        }
+
+        registros[6] = valor; // MBR
+        for (int b = tamano - 1; b >= 0; b--){ // de la ultima celda a la primera
+            memoria[dirFisica + b] = valor & 0xFF; // guarda el byte menos significativo
+            valor = valor >> 8;                    // pasa al siguiente byte
+        }
+
+        direccionLogica += tamano;
+    }
+}
+
+void sysWrite(){
+    int direccionLogica = registros[13]; // EDX
+    int modo = registros[10];            // EAX (puede tener varios modos a la vez)
+    int cantidad = registros[12] & 0xFFFF;       // ECX (2 bytes bajos): cantidad de valores
+    int tamano = (registros[12] >> 16) & 0xFFFF; // ECX (2 bytes altos): tamaño de cada valor
+
+    for (int i = 0; i < cantidad; i++){
+        int dirFisica = traducirDireccion(direccionLogica, tamano);
+        if (dirFisica < 0) 
+          return; // fallo de segmento
+
+        int valor = 0;
+        for (int b = 0; b < tamano; b++) // arma el valor con los bytes de memoria (el primero es el mas significativo)
+            valor = (valor << 8) | (unsigned char)memoria[dirFisica + b];
+        registros[6] = valor; // MBR
+
+        printf("[%04X]:", dirFisica);
+
+        if (modo & 0x10){ // binario
+            int empezo = 0; // pasa a 1 cuando aparece el primer bit en 1 (para no mostrar ceros a la izquierda)
+            printf(" 0b");
+            for (int b = 31; b >= 0; b--){
+                int bit = (valor >> b) & 1;
+                if (bit == 1) 
+                  empezo = 1;
+                  if (empezo) 
+                    printf("%d", bit);
+            }
+            if (!empezo) 
+              printf("0"); // el valor era 0
+        }
+        if (modo & 0x08) 
+          printf(" 0x%X", valor); // hexadecimal
+
+        if (modo & 0x04) 
+          printf(" 0o%o", valor); // octal
+          
+        if (modo & 0x02){ // caracteres
+            printf(" ");
+            for (int b = 0; b < tamano; b++){
+                char c = memoria[dirFisica + b];
+                if (c >= 32 && c <= 126) printf("%c", c);
+                else printf("."); // no imprimible
+            }
+        }
+        if (modo & 0x01) 
+          printf(" %d", valor); // decimal
+
+        printf("\n");
+        direccionLogica += tamano;
+    }
+}
 
 void sys(){
     int operando = registros[2]; // OP1: único operando (código de llamada al sistema)
@@ -193,9 +291,38 @@ void swap(){
     xor(); // XOR A, B  →  A = A ^ B
 }
 
-void shl(){}
-void shr(){}
-void sar(){}
+void shl(){
+    int operando = registros[2]; // op1
+    int valor = leerOperando(operando); // valor real de A
+    int cantidad = leerOperando(registros[3]); // op2
+
+    valor = valor << cantidad;
+
+    escribirOperando(operando, valor);
+    setCC(valor, 0, 0);
+}
+
+void shr(){
+    int operando = registros[2]; // op1
+    int valor = leerOperando(operando); // valor real de A (no el descriptor)
+    int cantidad = leerOperando(registros[3]); // op2
+
+    valor = valor >> cantidad;
+
+    escribirOperando(operando, valor);
+    setCC(valor, 0, 0);
+}
+
+void sar(){
+    int operando = registros[2]; // op1
+    int valor = leerOperando(operando); // valor real de A
+    int cantidad = leerOperando(registros[3]); // op2
+
+    valor = valor >> cantidad; // shift aritmético (con signo, preserva el bit de signo)
+
+    escribirOperando(operando, valor);
+    setCC(valor, 0, 0);
+}
 
 
 //Carga los 2 bytes menos significativos del primer operando (OP1), con los 2 bytes menos significativos del segundo operando (OP2)
