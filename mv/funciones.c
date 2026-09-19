@@ -138,8 +138,8 @@ void sysWrite(){
                 int bit = (valor >> b) & 1;
                 if (bit == 1) 
                   empezo = 1;
-                  if (empezo) 
-                    printf("%d", bit);
+                if (empezo) 
+                  printf("%d", bit);
             }
             if (!empezo) 
               printf("0"); // el valor era 0
@@ -171,7 +171,7 @@ void sys(){
     int numeroLlamada = leerOperando(operando);
 
     switch (numeroLlamada){
-            case 1: // READ
+        case 1: // READ
             sysRead();
             break;
         case 2: // WRITE
@@ -280,15 +280,12 @@ void or(){}
 void xor(){}
 
 void swap(){
-    int descA = registros[2]; // OP1: descriptor original de A
-    int descB = registros[3]; // OP2: descriptor original de B
-    xor(); // XOR A, B  →  A = A ^ B
-    registros[2] = descB;
-    registros[3] = descA;
-    xor(); // XOR B, A  →  B = B ^ A
-    registros[2] = descA;
-    registros[3] = descB;
-    xor(); // XOR A, B  →  A = A ^ B
+    int a = leerOperando(registros[2]); // valor de A
+    int b = leerOperando(registros[3]); // valor de B
+
+    escribirOperando(registros[2], b);  // A = B
+    escribirOperando(registros[3], a);  // B = A
+    setCC(b, 0, 0);   
 }
 
 void shl(){
