@@ -162,7 +162,7 @@ void sysWrite(){
           printf(" %d", valor); // decimal
 
         printf("\n");
-        direccionLogica += tamano;
+        direccionLogica += tamano;  // avanza
     }
 }
 
