@@ -1,4 +1,4 @@
-char *mnemonicos[] = {
+char mnemonicos[32][5] = {
     "SYS",
     "JMP",
     "JN",
@@ -32,7 +32,7 @@ char *mnemonicos[] = {
     "RND"
 };
 
-char *reg[] = {
+char reg[32][5] = {
     "IP",
     "OPC",
     "OP1",

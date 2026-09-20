@@ -10,9 +10,54 @@
 #define INT_MAX 0x7FFFFFFF
 #define INT_MIN 0x80000000
 
-//  FUNCIONES AUXILIARES
+// declaración de funciones
+char devolverByte(unsigned int dato, int nroByte);
+int leerOperando(int operando, int cantBytes);
+void escribirOperando(int operando, int valor, int cantBytes);
+void leerDeMemoria();
+void escribirEnMemoria();
+void escribirMBR(int valor);
+void calcularPunteroLogico(int operandoMemoria);
+void calcularPunteroFisico(int cantidadDeBytes);
+void notDefined();
+void stop();
+void sysRead();
+void sysWrite();
+void sys();
+int negative();
+int cero();
+int carry();
+int overflow();
+void jmp();
+void jp();
+void jn();
+void jz();
+void jc();
+void jv();
+void jnp();
+void jnn();
+void jnz();
+void not();
+void setCC(int resultado, int carry, int overflow);
+void mov();
+void add();
+void sub();
+void mul();
+void div();
+void cmp();
+void and();
+void or();
+void xor();
+void swap();
+void shl();
+void shr();
+void sar();
+void ldl();
+void ldh();
+void rnd();
 
-// 1 función por mnemónico (28 mnémonicos + 5 sin definir (notDefined))
+
+//  FUNCIONES AUXILIARES
 
 // el dato lo "casteo" a unsigned int para hacer el shift lógico
 char devolverByte(unsigned int dato, int nroByte){ // que nombre le ponemos a los parámetros
@@ -21,7 +66,6 @@ char devolverByte(unsigned int dato, int nroByte){ // que nombre le ponemos a lo
     dato &= 0xFF;
 }
 
-// falta configurar el mbr, y un par de cosas más
 
 int leerOperando(int operando, int cantBytes){
     int tipo = (devolverByte(operando,3));
@@ -124,6 +168,7 @@ void calcularPunteroFisico(int cantidadDeBytes){ // configura el MAR
     registros[5] = puntFisico; // reg[5] -> MAR
 }
 
+// 1 función por mnemónico (28 mnémonicos + 5 sin definir (notDefined))
 
 //--------------    NO DEFINIDO  ---------------------
 
@@ -155,7 +200,7 @@ void sysRead(){
         char texto[33]; // solo para el binario: hasta 32 bits + '\0'
 
         printf("[%04X]: ", dirFisica);
-        switch (modo){
+        switch (modo) {
             case 1: // decimal
                 scanf("%d", &valor);
                 break;
