@@ -11,6 +11,7 @@
 #define INT_MAX 0x7FFFFFFF
 #define INT_MIN 0x80000000
 
+
 //  FUNCIONES AUXILIARES
 
 // 1 función por mnemónico (28 mnémonicos + 5 sin definir (notDefined))
@@ -348,7 +349,7 @@ void mov(){
     setCC(valor, 0, 0);                             //  Modifico CC (No hay CARRY ni OVERFLOW)
     escribirOperando(registros[2], valor, 4);       //  Escribe valor en OP1;
 }
-void add(){
+void add(){     /// APLICA MASK 4 BYTES MAS SIGN.
     int C = 0;
     int V = 0;
     int valor1 = leerOperando(registros[2],4);  //  Guarda valor de OP1 en valor1
@@ -362,22 +363,22 @@ void add(){
         if((valor1 < 0  &&  valor2 < 0) && (valor1 < INT_MIN-valor2))
             V = 1;
 
-    long int temp = (long int)valor1+valor2;    //  Verifica CARRY
-    if((temp >> 32) != 0)
+    long long temp = (long long)valor1 + (long long)valor2;    //  Verifica CARRY
+    if((temp & 0xFFFFFFFF00000000) != 0)
         C = 1;
 
     setCC( suma, C, V );                        //  Modifica CC
     escribirOperando(registros[2], suma, 4);    //  Escribe 'suma' en OP1;
 }
-void sub(){
+void sub(){     /// APLICA MASK 4 BYTES MAS SIGN.
     int C = 0;
     int V = 0;
     int valor1 = leerOperando(registros[2],4);
     int valor2 = leerOperando(registros[3],4);
 
-    valor2 = (~valor2)+1;           //  Pasa COMPLEMENTO A 2 a 'Valor2'
+    int resta = valor1 - valor2;    //  A - B
 
-    int resta = valor1 + valor2;    //  A + (-B)
+    valor2 = (~valor2)+1;           //  Pasa COMPLEMENTO A 2 a 'Valor2'
 
     if((valor1 > 0 && valor2 > 0) && (valor1 > INT_MAX-valor2))           //  Verifica OVERFLOW
         V = 1;
@@ -385,8 +386,8 @@ void sub(){
         if((valor1 < 0  &&  valor2 < 0) && (valor1 < INT_MIN-valor2))
             V = 1;
 
-    long int temp = (long int)valor1+valor2;    //  Verifica CARRY
-    if((temp >> 32) != 0)
+    long long temp = (long long)valor1 + (long long)valor2;    //  Verifica CARRY
+    if((temp & 0xFFFFFFFF00000000) != 0)
         C = 1;
 
     setCC(resta, C, V);
@@ -398,7 +399,7 @@ void mul(){     /// REVISAR
 
     int valor1 = leerOperando(registros[2],4);
     int valor2 = leerOperando(registros[3],4);
-    long int ans = (long int)valor1*valor2;
+    long long ans = (long long)valor1 * (long long)valor2;
 
     unsigned long int modA = (unsigned long int)abs(valor1);
     unsigned long int modB = (unsigned long int)abs(valor2);
@@ -449,20 +450,23 @@ void div(){
         escribirOperando(registros[2], cociente,4);   //  Guarda DIVISION ENTERA en OP1
         escribirOperando(registros[16], resto,4);     //  Guarda RESTO en AC
     }
-    else
+    else{
         //  Si el valor del operando 2 ES CERO,
         //  DETIENE EL PROGRAMA POR COMPLETO
+        printf("[ERROR]:    DIVISION POR CERO\n");
+        printf("[ERROR]:    Finalizando programa...");
         stop();
+    }
 }
-void cmp(){     /// REVISAR
+void cmp(){     /// APLICA MASCARA 4 BYTES MAS SIGN.        /// REVISAR
     int C = 0;
     int V = 0;
     int valor1 = leerOperando(registros[2],4);
     int valor2 = leerOperando(registros[3],4);
 
-    valor2 = (~valor2)+1;           //  Pasa COMPLEMENTO A 2 a 'Valor2'
+    int diferencia = valor1 - valor2;    //  A - B
 
-    int diferencia = valor1 + valor2;    //  A + (-B)
+    valor2 = (~valor2)+1;           //  Pasa COMPLEMENTO A 2 a 'Valor2'
 
     if((valor1 > 0 && valor2 > 0) && (valor1 > INT_MAX-valor2))           //  Verifica OVERFLOW
         V = 1;
@@ -470,8 +474,8 @@ void cmp(){     /// REVISAR
         if((valor1 < 0  &&  valor2 < 0) && (valor1 < INT_MIN-valor2))
             V = 1;
 
-    long int temp = (long int)valor1+valor2;    //  Verifica CARRY
-    if((temp >> 32) != 0)
+    long long temp = (long long)valor1 + (long long)valor2;     //  Verifica CARRY
+    if((temp & 0xFFFFFFFF00000000) != 0)
         C = 1;
 
     setCC(diferencia, C, V);     //  Modifica CC con respecto a la diferencia anterior
@@ -509,7 +513,7 @@ void swap(){
 
     setCC(b, 0, 0); // solo chequea si es negativo o cero
 }
-void shl(){
+void shl(){     /// APLICA MASCARA 4 BYTES MAS SIGN.
     int C = 0;
     int V = 0;
     int valor1 = leerOperando(registros[2], 4);
@@ -517,22 +521,23 @@ void shl(){
 
     int ans = valor1 << valor2; //  Realiza SHIFT
 
-    long int temp = (long int)a<<b;     //  Verifica CARRY
-    if((temp>>32) != 0)
+    long long temp = (long long)a << (long long)b;  //  Verifica CARRY
+    if((temp & 0xFFFFFFFF00000000) != 0)
         C = 1;
-    if(((valor1 > 0) && (ans < a)) || ((valor1 < 0) && (ans > a)))
-        V = 1;                  //  Verifica OVERFLOW
+
+    if(((valor1 > 0) && (ans < valor1)) || ((valor1 < 0) && (ans > valor1)))
+        V = 1;                                      //  Verifica OVERFLOW
 
     setCC(ans, C, V);
     escribirOperando(registros[2], ans, 4);   //  Escribe 'ans' en 'OP1'
 }
-void shr(){
+void shr(){     /// APLICA MASCARA 4 BYTES MAS SIGN.
     int C = 0;  //  NO TIENE CARRY
     int V = 0;
     int valor1 = leerOperando(registros[2], 4);
     int valor2 = leerOperando(registros[3], 4);
 
-    int ans = valor1 >> valor2;                 //  Realiza shift
+    int ans = (valor1 & 0xFFFFFFFF) >> valor2;  //  Realiza shift logico
 
     if((valor1 < 0) && (valor2 > 0))
         V = 1;                                  //  Verifica OVERFLOW
