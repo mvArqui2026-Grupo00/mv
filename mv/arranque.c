@@ -1,10 +1,12 @@
 #include "procesador.c" //no hacemos include de los demás módulos o librerias porque ya están incluidas en la concatenación de include...
 
 void inicializarMemoria(short int tamCod, FILE *f) {
-    char byte;
+    printf("hola!!!\n");
+    unsigned char byte;
     for (int i = 0; i < tamCod; i++){
         fread(&byte,1,1,f);
         memoria[i] = byte;
+        printf("\n%2X\n",byte);
     }
 }
 
@@ -26,30 +28,52 @@ void inicializarRegistros(){
     registros[0] = registros[26] ; // ip
 }
 
-int main(int argc, char *argv[]){ // el segundo parámetro es un supuesto mío de como sería el "-d", pero no estoy seguro que sea así ~Mauro
-    // arg0 -> "mv"
+int main(int argc, char *argv[]){
+    // arg0 -> "vmx"
+    // arg1 -> "filename.vmx"
+    // arg2 -> "-d" (opcional)
     char *archivoBin = argv[1]; 
+    printf("%s\n",archivoBin);
     FILE *f = fopen(archivoBin,"rb");
-    char identif[5];
-    char version;
-    short int tamCod;
-    // acá la buena práctica es poner sizeof(tipo), pero acá siempre queremos
-    // "agarrar" la misma cantida de bytes, así que esto lo destaca
-    fread(identif,1,5,f);
-    fread(&version,1,1,f);
-    fread(&tamCod,2,1,f);
+    if (f != NULL){
+        char identif[5];
+        char byteVersion;
+        char byte1, byte2;
 
-    if (strcmp(identif,"VMX26") && version == '1'){ // es necesario el (version == 1) ?
-        inicializarMemoria(tamCod,f); // pasamos el puntero a archivo apuntando al inicio del "code segment"
-        fclose(f);
-        inicializarTablaSegm(tamCod);
-        inicializarPunteroFunciones();
+        int version;
+        short int tamCod;
 
-        disassembler = (argc >= 3 && argv[2] == "-d");
+        fread(identif,1,5,f);
 
-        procesa();
-        return 0;
+        fread(&byteVersion,1,1,f);
+        version = byteVersion;
+        
+        // es necesario armar el numero de 2 bytes a mano
+        // porque el compilador de C trabaja con Little-Endian
+        // y el traductor trabaja con Big-Endian
+        // entonces al leer directamente al número lo lee al revés
+        fread(&byte1,1,1,f);
+        fread(&byte2,1,1,f);
+        tamCod = byte1;
+        tamCod = tamCod << 8;
+        tamCod |= byte2;
+
+        printf("identif: %s \nVersion: %d \nTamaño del Código: %d bytes \n\n",identif,version,tamCod);
+
+        if ((strcmp(identif,"VMX26") == 0) && version == 1){ // es necesario el (version == 1) ?
+            printf("archivo válido\n\n");
+            inicializarMemoria(tamCod,f); // pasamos el puntero a archivo apuntando al inicio del "code segment"
+            fclose(f);
+            inicializarTablaSegm(tamCod);
+            inicializarPunteroFunciones();
+
+            disassembler = (argc >= 3 && argv[2] == "-d");
+
+            procesa();
+            return 0;
+        }
     }
-
+    else
+        printf("no se pudo abrir el binario, loco \n");
     return 1;
 }

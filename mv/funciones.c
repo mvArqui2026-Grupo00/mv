@@ -11,10 +11,11 @@
 #define INT_MIN 0x80000000
 
 // declaración de funciones
-char devolverByte(unsigned int dato, int nroByte);
+unsigned char devolverByte(unsigned int dato, int nroByte);
 int leerOperando(int operando, int cantBytes);
 void escribirOperando(int operando, int valor, int cantBytes);
 void leerDeMemoria();
+void leerDeMemoriaReg();
 void escribirEnMemoria();
 void escribirMBR(int valor);
 void calcularPunteroLogico(int operandoMemoria);
@@ -30,7 +31,7 @@ int carry();
 int overflow();
 void jmp();
 void jp();
-void jn();
+void jneg(); // jn es una función built-in (del lenguaje)
 void jz();
 void jc();
 void jv();
@@ -43,7 +44,7 @@ void mov();
 void add();
 void sub();
 void mul();
-void div();
+void divis(); // div es una función de stdlib
 void cmp();
 void and();
 void or();
@@ -56,14 +57,18 @@ void ldl();
 void ldh();
 void rnd();
 
-
 //  FUNCIONES AUXILIARES
 
 // el dato lo "casteo" a unsigned int para hacer el shift lógico
-char devolverByte(unsigned int dato, int nroByte){ // que nombre le ponemos a los parámetros
+unsigned char devolverByte(unsigned int dato, int nroByte){ // que nombre le ponemos a los parámetros
     // el nro byte es el byte a devolver, siendo 0 el byte de menor significado, 1: el segundo de menor significado, ....
-    dato = dato >> 8 * nroByte;
+//    printf("dato : %8X\n",dato);
+    dato = dato >> (8 * nroByte);
     dato &= 0xFF;
+//    printf("byte a devolver: %8X\n",dato);
+    unsigned char aux;
+    aux = (unsigned char) dato;
+    return aux;
 }
 
 
@@ -100,6 +105,7 @@ void escribirOperando(int operando, int valor, int cantBytes){
             calcularPunteroLogico(datosOperando);
             calcularPunteroFisico(cantBytes);
             aux = leerOperando(valor,4);
+            printf("\n\ninmediato:%d\n\n",aux);
             escribirMBR(aux);
             escribirEnMemoria();
             break;
@@ -113,13 +119,33 @@ void leerDeMemoria(){
     int n; // cant bytes a leer
     //n = devolverByte(registros[5],3);
     //n = n << 8;
-    n |= devolverByte(registros[5],2);
+    n = devolverByte(registros[5],2);
+    int posFisica = registros[5] & 0xFFFF;
 
-    int aux = 0;
+       printf("posFisica: %d\n",posFisica);
+    unsigned int aux = 0;
+
+    //    printf("%d\n",n);
     for(int i=0; i < n; i++){
         aux = aux << 8;
-        aux = aux | memoria[registros[5] + i];
+//        printf("hola\n");
+        aux = aux | memoria[posFisica + i];
+        printf("\n%2X\n",memoria[posFisica + i]);
+//        printf("chau\n");
     }
+    escribirMBR(aux);
+}
+
+void leerDeMemoriaReg(){
+    int n;
+    n = devolverByte(registros[5],2);
+    int posFisica = registros[5] & 0xFFFF;
+    unsigned int aux = 0;
+    for (int i = 0; i < n; i++){
+        aux = aux << 8;
+        aux = aux | memoria[posFisica + i];
+    }
+    aux &= 0xFFFFFF1F;
     escribirMBR(aux);
 }
 
@@ -130,7 +156,8 @@ void escribirEnMemoria(){
     mbr = registros[6];
     //n = devolverByte(registros[5],3);
     //n = n << 8;
-    n |= devolverByte(registros[5],2);
+    n = devolverByte(registros[5],2);
+    int posFisica = registros[5] & 0xFFFF;
 
     int aux = 0; // por las dudas que el n sea 0, hay que verificarlo en el testing
     for(int i=0; i < n; i++){
@@ -154,17 +181,27 @@ void calcularPunteroLogico(int operandoMemoria){ // configura el LAR
 }
 
 void calcularPunteroFisico(int cantidadDeBytes){ // configura el MAR
-    //return puntFisico;
+//    printf("lar= %8X\n",registros[4]);
     int puntLogico = registros[4]; // lar
     int nroSegm = devolverByte(puntLogico,2);
+
+//    printf("nroSegm = %d\n",nroSegm);
     int puntFisico = tablaSegm[nroSegm].base; // dirección base
+
+//    printf("tablasegm0.base = %d\n",puntFisico);
     int aux = devolverByte(puntLogico,1);
-    aux = aux << 1;
+    aux = aux << 8;
     aux = aux | devolverByte(puntLogico,0);
+
+//    printf("byte 0 y 1 de lar = %4X \n",aux);
     puntFisico += aux; // + offset
+
+//    printf("puntFis = %d\n",puntFisico);
     // acá habría que verificar si no nos caímos del segmento
     cantidadDeBytes = cantidadDeBytes << 16;
     puntFisico |= cantidadDeBytes; // cargamos en la parte alta del MAR la cant de bytes a leer/escribir
+
+//    printf("punteroFis queda conformado: = %8X\n",puntFisico);
     registros[5] = puntFisico; // reg[5] -> MAR
 }
 
@@ -181,6 +218,7 @@ void notDefined(){
 
 void stop(){
     registros[0] = -1; // ip = 0xFFFFFFFF
+    printf("llegaste a un stop \n\n");
 }
 
 //--------------    UN OPERANDO   --------------------
@@ -197,7 +235,7 @@ void sysRead(){
         int dirFisica = registros[5] && 0xFFFF;
 
         int valor = 0;
-        char texto[33]; // solo para el binario: hasta 32 bits + '\0'
+        unsigned char texto[33]; // solo para el binario: hasta 32 bits + '\0'
 
         printf("[%04X]: ", dirFisica);
         switch (modo) {
@@ -205,7 +243,9 @@ void sysRead(){
                 scanf("%d", &valor);
                 break;
             case 2: // caracter
-                scanf(" %c", &valor);
+                unsigned char aux;
+                scanf(" %c", &aux);
+                valor = aux;
                 break;
             case 4: // octal
                 scanf("%o", &valor);
@@ -231,14 +271,24 @@ void sysWrite(){
     int cantidad = registros[12] & 0xFFFF;       // ECX (2 bytes bajos): cantidad de valores
     int tamano = (registros[12] >> 16) & 0xFFFF; // ECX (2 bytes altos): tamaño de cada valor
 
+    printf("\n\n\n\n\n felicidades, llegó a un sys write \n\n\n\n\n");
+    printf("cant valores: %d\n",cantidad);
+    printf("tamaño: %d \n",tamano);
+    printf("modo: %d\n",modo);
+    printf("dirLogica: %d\n",direccionLogica);
+
+
+
     for (int i = 0; i < cantidad; i++){
+        printf("hiii\n");
         registros[4] = direccionLogica; // config lar
         calcularPunteroFisico(cantidad); // config mar
-        int dirFisica = registros[5] && 0xFFFF;
+        int dirFisica = registros[5] & 0xFFFF;
 
         int valor = 0;
         for (int b = 0; b < tamano; b++) // arma el valor con los bytes de memoria (el primero es el mas significativo)
             valor = (valor << 8) | memoria[dirFisica + b];
+        printf("valor: %8X\n\n\n",valor);
         escribirMBR(valor);
 
         printf("[%04X]:", dirFisica);
@@ -263,11 +313,12 @@ void sysWrite(){
           printf(" 0o%o", valor); // octal
           
         if (modo & 0x02){ // caracteres
+            printf("halloooo\n\n");
             printf(" ");
             for (int b = 0; b < tamano; b++){
-                char c = devolverByte(valor, b);
-                if (c >= 32 && c <= 126)
-                    printf("%c", c);
+                unsigned char c = devolverByte(valor, b);
+                if ((c >= 32) && (c <= 126))
+                    printf("\n\n\n\n\n\n\n\n\n\n%c", c);
                 else
                     printf("."); // no imprimible
             }
@@ -278,6 +329,7 @@ void sysWrite(){
         printf("\n");
         direccionLogica += tamano;  // avanza TA BIEN
     }
+    printf("\n\n\n\n\n\n\n\n\n\n");
 }
 
 void sys(){
@@ -337,7 +389,7 @@ void jp(){
         jmp();
     }
 }
-void jn(){
+void jneg(){ 
     if (negative())
         jmp();
 }
@@ -377,7 +429,7 @@ void not(){
 
 //--------------   DOS OPERANDOS  --------------------
 
-void setCC(int resultado, int carry, int overflow){    //  Modifica CC (registro 17)
+void setCC(int resultado, int hayCarry, int hayOverflow){    //  Modifica CC (registro 17)
     int aux = 0;
     if(resultado == 0)
         aux = 0b0100;                   //  Z: Cero
@@ -385,8 +437,8 @@ void setCC(int resultado, int carry, int overflow){    //  Modifica CC (registro
         if(resultado < 0)
             aux = 0b1000;               //  N: Negativo
 
-    aux |= 0b0010 * carry;
-    aux |= 0b0010 * overflow;
+    aux |= 0b0010 * hayCarry;
+    aux |= 0b0010 * hayOverflow;
 
     aux = aux << 28;    //  NZCV << 28  =  0b NZCV0000 00000000 00000000 00000000
     registros[17] = aux; //  Guarda AUX en REGISTRO CC
@@ -394,6 +446,7 @@ void setCC(int resultado, int carry, int overflow){    //  Modifica CC (registro
 
 
 void mov(){
+//    printf("felicidades, estas en un mov \n\n");
     int valor = leerOperando(registros[3],4);    //  Guarda valor de OP2 en valor
     setCC(valor, 0, 0); // analizo el valor (si es negativo o 0)
     escribirOperando(registros[2], valor,4); //  Escribe valor en OP1;
@@ -427,11 +480,11 @@ void mul(){
     int valor2 = leerOperando(registros[3],4);
     int producto = valor1 * valor2;             //  Guarda multiplicacion en 'producto'
 
-    setCC(producto, carry, overflow);
+    //setCC(producto, carry, overflow); // esto lo comento temporalmente para prueba de compilación
     escribirOperando(registros[2], producto,4);   //  Escribe 'producto' en OP1;
 }
 
-void div(){
+void divis(){
     int valor1 = leerOperando(registros[2],4);
     int valor2 = leerOperando(registros[3],4);
     int cociente;

@@ -11,7 +11,7 @@ void inicializarPunteroFunciones(){
     funciones[0] = sys;
     funciones[1] = jmp;
     funciones[2] = jp;
-    funciones[3] = jn;
+    funciones[3] = jneg; // jn es una función built-in (del lenguaje)
     funciones[4] = jz;
     funciones[5] = jc;
     funciones[6] = jv;
@@ -30,7 +30,7 @@ void inicializarPunteroFunciones(){
     funciones[17] = add;
     funciones[18] = sub;
     funciones[19] = mul;
-    funciones[20] = div;
+    funciones[20] = divis; // div es una función de stdlib
     funciones[21] = cmp;
     funciones[22] = and;
     funciones[23] = or;
