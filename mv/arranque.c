@@ -6,7 +6,7 @@ void inicializarMemoria(short int tamCod, FILE *f) {
     for (int i = 0; i < tamCod; i++){
         fread(&byte,1,1,f);
         memoria[i] = byte;
-        printf("\n%2X\n",byte);
+        //printf("\n%02X\n",byte);
     }
 }
 
@@ -65,6 +65,7 @@ int main(int argc, char *argv[]){
             inicializarMemoria(tamCod,f); // pasamos el puntero a archivo apuntando al inicio del "code segment"
             fclose(f);
             inicializarTablaSegm(tamCod);
+            inicializarRegistros();
             inicializarPunteroFunciones();
 
             disassembler = (argc >= 3 && argv[2] == "-d");
