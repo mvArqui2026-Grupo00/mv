@@ -1,7 +1,6 @@
 #include "procesador.c" //no hacemos include de los demás módulos o librerias porque ya están incluidas en la concatenación de include...
 
 void inicializarMemoria(short int tamCod, FILE *f) {
-    printf("hola!!!\n");
     unsigned char byte;
     for (int i = 0; i < tamCod; i++){
         fread(&byte,1,1,f);
@@ -32,8 +31,9 @@ int main(int argc, char *argv[]){
     // arg0 -> "vmx"
     // arg1 -> "filename.vmx"
     // arg2 -> "-d" (opcional)
+    printf("\n");
     char *archivoBin = argv[1]; 
-    printf("%s\n",archivoBin);
+    printf("Archivo Binario: \"%s\"\n",archivoBin);
     FILE *f = fopen(archivoBin,"rb");
     if (f != NULL){
         char identif[5];
@@ -58,17 +58,16 @@ int main(int argc, char *argv[]){
         tamCod = tamCod << 8;
         tamCod |= byte2;
 
-        printf("identif: %s \nVersion: %d \nTamaño del Código: %d bytes \n\n",identif,version,tamCod);
+        printf("Identificador: %s \nVersion: %d \nTamaño del Código: %d bytes \n\n",identif,version,tamCod);
 
-        if ((strcmp(identif,"VMX26") == 0) && version == 1){ // es necesario el (version == 1) ?
-            printf("archivo válido\n\n");
+        if ((strcmp(identif,"VMX26") == 0) && version == 1){
             inicializarMemoria(tamCod,f); // pasamos el puntero a archivo apuntando al inicio del "code segment"
             fclose(f);
             inicializarTablaSegm(tamCod);
             inicializarRegistros();
             inicializarPunteroFunciones();
 
-            disassembler = (argc >= 3 && argv[2] == "-d");
+            disassembler = ((argc >= 3) && (strcmp(argv[2],"-d") == 0));
 
             procesa();
             return 0;

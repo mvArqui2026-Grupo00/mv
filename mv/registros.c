@@ -1,6 +1,6 @@
 #define CANT_REGISTROS 32
 
-unsigned int registros[CANT_REGISTROS]; // 4 bytes cada registro
+int registros[CANT_REGISTROS]; // 4 bytes cada registro
 
 /*
     0 -> IP (Instruction Pointer)

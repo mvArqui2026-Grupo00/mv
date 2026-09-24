@@ -9,10 +9,12 @@ char mnemonicos[32][5] = {
     "JNN",
     "JNZ",
     "NOT",
-    "",
-    "",
-    "",
-    "",
+
+    "NDef",
+    "NDef",
+    "NDef",
+    "NDef",
+
     "STOP",
     "MOV",
     "ADD",
@@ -40,9 +42,11 @@ char reg[32][5] = {
     "LAR",
     "MAR",
     "MBR",
-    "",
-    "",
-    "",
+
+    "RgND",
+    "RgND",
+    "RgND",
+
     "EAX",
     "EBX",
     "ECX",
@@ -51,24 +55,26 @@ char reg[32][5] = {
     "EFX",
     "AC",
     "CC",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
+    "RgND",
+    "RgND",
+    "RgND",
+    "RgND",
+    "RgND",
+    "RgND",
+    "RgND",
+    "RgND",
+
     "CS",
     "DS",
-    "",
-    "",
-    "",
-    ""
+    
+    "RgND",
+    "RgND",
+    "RgND",
+    "RgND",
 };
 
 
-void mostrarOperando(unsigned int tipo, unsigned int operando){
+void mostrarOperando(unsigned int tipo, int operando){
     switch (tipo){
         case 0:
             break;
@@ -87,8 +93,8 @@ void mostrarOperando(unsigned int tipo, unsigned int operando){
 
 void mostrarAssembler(short int direccionInstruccion){
     int dirFisica = tablaSegm[registros[26] & 0x00FF0000].base + direccionInstruccion;
-    printf("[%4X] ",direccionInstruccion);
-    printf("%2X ",registros[1]);
+    printf("[%04X] ",direccionInstruccion);
+    printf("%02X ",registros[1]);
     int op1 = registros[2] & 0x00FFFFFF;
     int op2 = registros[3] & 0x00FFFFFF;
     unsigned int tipo1 = registros[2] & 0xFF000000;
@@ -98,19 +104,21 @@ void mostrarAssembler(short int direccionInstruccion){
 
     dirFisica++;
     for(int i=0; i < tipo1; i++){
-        printf("%2X ",memoria[dirFisica]);
+        printf("%02X ",memoria[dirFisica]);
         dirFisica++;
     }
     for(int i=0; i < tipo2; i++){
-        printf("%2X ",memoria[dirFisica]);
+        printf("%02X ",memoria[dirFisica]);
         dirFisica++;
     }
     printf("\t\t| ");
     printf("%s \t",mnemonicos[registros[1] & 0x1F] );
 
     mostrarOperando(tipo1,op1);
-    printf(",\t");
-    mostrarOperando(tipo2,op2);
+    if (tipo2){
+        printf(",\t");
+        mostrarOperando(tipo2,op2);
+    }
 
     printf("\n");
 }
