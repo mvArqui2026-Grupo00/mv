@@ -1,6 +1,7 @@
 char mnemonicos[32][5] = {
     "SYS",
     "JMP",
+    "JP",
     "JN",
     "JZ",
     "JC",

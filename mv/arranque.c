@@ -38,7 +38,7 @@ int main(int argc, char *argv[]){
     if (f != NULL){
         char identif[5];
         char byteVersion;
-        char byte1, byte2;
+        unsigned char byte1, byte2;
 
         int version;
         short int tamCod;
@@ -73,7 +73,9 @@ int main(int argc, char *argv[]){
             return 0;
         }
     }
-    else
-        printf("no se pudo abrir el binario, loco \n");
+    else{
+        printf("\nno se pudo abrir el binario, loco \n\n");
+        printf("(╥﹏╥) \n");
+    }
     return 1;
 }

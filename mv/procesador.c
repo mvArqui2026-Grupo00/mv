@@ -82,5 +82,6 @@ void procesa(){
     }
     
     printf("\n -------------------------------------------\n");
+    printf("\nദി(˵ •̀ ᴗ - ˵ ) ✧ \n\n");
     printf("Gracias por compilar (: \nGlass Group SA -> subdivisión Grupo 0x00 -> departamento oficial encargado de la interpretación y ejecución Assembly\n\n");
 }
