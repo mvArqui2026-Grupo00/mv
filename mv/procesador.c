@@ -1,7 +1,8 @@
 #include <stdio.h>
 #include <stdint.h>
+
 #include "procesador.h"
-#include "puntFunc.c"
+#include "puntFunc.h"
 #include "mnemonicos.h"
 #include "funcionesAuxiliares.h"
 #include "estructuras.h"

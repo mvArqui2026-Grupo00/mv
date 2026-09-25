@@ -1,5 +1,6 @@
 #include "stdio.h"
 #include "disassembler.h"
+#include "estructuras.h"
 #include "funcionesAuxiliares.h"
 
 

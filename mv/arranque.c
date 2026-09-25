@@ -3,7 +3,10 @@
 #include <string.h>
 
 #include "procesador.h"
+#include "puntFunc.h"
+#include "funcionesAuxiliares.h"
 #include "estructuras.h"
+#include "disassembler.h"
 
 void inicializarMemoria(short int tamCod, FILE *f) {
     unsigned char byte;
@@ -65,7 +68,7 @@ int main(int argc, char *argv[]){
         tamCod = tamCod << 8;
         tamCod |= byte2;
 
-        printf("Identificador: %s \nVersion: %d \nTamaño del Código: %d bytes \n\n",identif,version,tamCod);
+        printf("Identificador: %s \nVersion: %d \nTamanio del Codigo: %d bytes \n\n",identif,version,tamCod);
 
         if ((strcmp(identif,"VMX26") == 0) && version == 1){
             inicializarMemoria(tamCod,f); // pasamos el puntero a archivo apuntando al inicio del "code segment"

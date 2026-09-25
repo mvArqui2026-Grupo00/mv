@@ -3,6 +3,7 @@
 #include <time.h> // para mnemónico rnd
 #include <stdint.h>
 #include "mnemonicos.h"
+#include "funcionesAuxiliares.h"
 #include "estructuras.h"
 
 
