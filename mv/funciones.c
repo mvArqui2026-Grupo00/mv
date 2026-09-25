@@ -5,10 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-
-//  CONSTANTES: LIMITES INT
-#define INT_MAX 0x7FFFFFFF
-#define INT_MIN 0x80000000
+#include <stdint.h>
 
 // declaración de funciones
 
@@ -477,7 +474,7 @@ void mov(){
 }
 
 void verificarCarryOverflowSuma(int valor1, int valor2, int suma, int * carry, int * overflow){
-    long int longSuma = (long int)valor1 + valor2;
+    int64_t longSuma = (int64_t)valor1 + valor2;
     if ((longSuma >> 32) != 0)
         *carry = 1;
 
@@ -520,7 +517,7 @@ void mul(){
 
     int carry = 0;
     int overflow = 0;
-    unsigned long int longProducto = (unsigned long int)abs(valor1) * (unsigned long int)abs(valor2);
+    int64_t longProducto = (int64_t)abs(valor1) * (int64_t)abs(valor2);
     if ((longProducto >> 32) != 0)
         carry = overflow = 1;
     setCC(producto, carry, overflow);
@@ -600,7 +597,7 @@ void shl(){
     int carry = 0;
     int overflow = 0;
 
-    long int longResultado = (unsigned long int) valor << cantidad;
+    int64_t longResultado = (int64_t) valor << cantidad;
     if ((longResultado & 0xFFFF0000) != 0)
         carry = 1;
 

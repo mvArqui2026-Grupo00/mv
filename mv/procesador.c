@@ -1,6 +1,5 @@
 // quitar las redundantes o innecesarias
 #include "puntFunc.c"
-int disassembler;
 
 void testOperandos(int opc, int op1, int op2){
     printf("\nOperación: ");
@@ -47,8 +46,6 @@ void paso(){
     leerDeMemoria();
     op2 = op2 << 24;
     op2 |= registros[6];
-    if (n==1 || n==3)
-        op2 &= 0xFFFFFF1F;        
     registros[0] += n;
     registros[4] = registros[0];
     
@@ -58,8 +55,6 @@ void paso(){
     leerDeMemoria();
     op1 = op1 << 24;
     op1 |= registros[6];
-    if (n==1 || n==3)
-        op1 &= 0xFFFFFF1F;
     registros[0] += n;
 
 
@@ -67,15 +62,11 @@ void paso(){
     registros[2] = op1;
     registros[3] = op2;
 
-//    testOperandos(opc,op1,op2);
-
-    if (disassembler)
-        mostrarAssembler(direccionInstruccion);
-
     funciones[opc]();
 }
 
 void procesa(){
+
     // sigue mientras el IP apunte dentro del segmento de código (el 0 de la tabla) y no haya ocurrido un error
     while ( ( (registros[0] >> 16) == 0) && ( (registros[0] & 0xFFFF) < tablaSegm[0].tamaño)){
         paso();
@@ -83,5 +74,6 @@ void procesa(){
     
     printf("\n -------------------------------------------\n");
     printf("\nദി(˵ •̀ ᴗ - ˵ ) ✧ \n\n");
-    printf("Gracias por compilar (: \nGlass Group SA -> subdivisión Grupo 0x00 -> departamento oficial encargado de la interpretación y ejecución Assembly\n\n");
+    printf(":: Gracias por compilar (: \n:: GLASS Group S.L.R - Departamento de Codificacion Assembler\n\n");
+    //subdivisión Grupo 0x00 -> departamento oficial encargado de la interpretación y ejecución Assembly
 }

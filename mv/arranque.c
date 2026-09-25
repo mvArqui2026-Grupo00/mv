@@ -42,6 +42,7 @@ int main(int argc, char *argv[]){
 
         int version;
         short int tamCod;
+        int disassembler;
 
         fread(identif,1,5,f);
 
@@ -68,6 +69,9 @@ int main(int argc, char *argv[]){
             inicializarPunteroFunciones();
 
             disassembler = ((argc >= 3) && (strcmp(argv[2],"-d") == 0));
+
+            if (disassembler)
+                mostrarAssembler(tamCod);
 
             procesa();
             return 0;

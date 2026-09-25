@@ -74,6 +74,12 @@ char reg[32][5] = {
     "RgND",
 };
 
+unsigned char obtByte(unsigned int dato, int nroByte){
+    dato = dato >> (8 * nroByte);
+    dato &= 0xFF;
+    unsigned char aux = dato;
+    return aux;
+}
 
 void mostrarOperando(unsigned int tipo, int operando){
     switch (tipo){
@@ -91,35 +97,70 @@ void mostrarOperando(unsigned int tipo, int operando){
     }
 }
 
-
-void mostrarAssembler(short int direccionInstruccion){
-    int dirFisica = tablaSegm[registros[26] & 0x00FF0000].base + direccionInstruccion;
+void pasoDisassembler(unsigned int * dirInstr){
+    unsigned int direccionInstruccion = * dirInstr;
+    int n1, n2, instr, opc, op1, op2;
+    
+    instr = memoria[direccionInstruccion];
     printf("[%04X] ",direccionInstruccion);
-    printf("%02X ",registros[1]);
-    int op1 = registros[2] & 0x00FFFFFF;
-    int op2 = registros[3] & 0x00FFFFFF;
-    unsigned int tipo1 = registros[2] & 0xFF000000;
-    tipo1 = tipo1 >> 24;
-    unsigned int tipo2 = registros[3] & 0xFF000000;
-    tipo2 = tipo2 >> 24;
+    printf("%02X ",instr);
+    direccionInstruccion++;
+    
+    opc = instr & 0X1F; // opc
+    if (opc == 0x0F) // operación de 0 operandos
+        n1 = n2 = 0;
+    else
+        if (instr & 0x10){ // operación de 2 operandos
+            n1 = (instr >> 4) & 0x03;
+            n2 = (instr >> 6) & 0x03;
+        }
+        else{
+            n1 = (instr >> 6) & 0x03;
+            n2 = 0;
+        }
 
-    dirFisica++;
-    for(int i=0; i < tipo1; i++){
-        printf("%02X ",memoria[dirFisica]);
-        dirFisica++;
+    op2 = 0;
+    for (int i=0;i<n2;i++){
+        op2 = op2 << 8;
+        op2 |= memoria[direccionInstruccion];
+        direccionInstruccion++;
     }
-    for(int i=0; i < tipo2; i++){
-        printf("%02X ",memoria[dirFisica]);
-        dirFisica++;
+
+    op1 = 0;
+    for (int i=0;i<n1;i++){
+        op1 = op1 << 8;
+        op1 |= memoria[direccionInstruccion];
+        direccionInstruccion++;
+    }
+
+    for(int i=0; i < n2; i++){
+        printf("%02X ",obtByte(op2,n2-1 -i));
+    }
+    for(int i=0; i < n1; i++){
+        printf("%02X ",obtByte(op1,n1-1 -i));
     }
     printf("\t\t| ");
-    printf("%s \t",mnemonicos[registros[1] & 0x1F] );
+    printf("%s \t",mnemonicos[opc & 0x1F]);
 
-    mostrarOperando(tipo1,op1);
-    if (tipo2){
+    mostrarOperando(n1,op1);
+    if (n2){
         printf(",\t");
-        mostrarOperando(tipo2,op2);
+        mostrarOperando(n2,op2);
     }
 
     printf("\n");
+    *dirInstr = direccionInstruccion;
+}
+
+
+void mostrarAssembler(unsigned int tamCod){
+    unsigned int direccionInstruccion = 0; // actualmente el comienzo del cs está en 0, esto se podría cambiar de ser necesario
+    
+    printf(" -------- -------- -------- --------\n");
+    printf("Inicio disassembler\n\n");
+    while(direccionInstruccion < tamCod){
+        pasoDisassembler(&direccionInstruccion);
+    }
+    printf("\nFin disassembler\n");
+    printf(" -------- -------- -------- --------\n\n");
 }
