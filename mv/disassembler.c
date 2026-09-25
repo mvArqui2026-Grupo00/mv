@@ -1,3 +1,8 @@
+#include "stdio.h"
+#include "disassembler.h"
+#include "funcionesAuxiliares.h"
+
+
 char mnemonicos[32][5] = {
     "SYS",
     "JMP",
@@ -74,13 +79,6 @@ char reg[32][5] = {
     "RgND",
 };
 
-unsigned char obtByte(unsigned int dato, int nroByte){
-    dato = dato >> (8 * nroByte);
-    dato &= 0xFF;
-    unsigned char aux = dato;
-    return aux;
-}
-
 void mostrarOperando(unsigned int tipo, int operando){
     switch (tipo){
         case 0:
@@ -134,10 +132,10 @@ void pasoDisassembler(unsigned int * dirInstr){
     }
 
     for(int i=0; i < n2; i++){
-        printf("%02X ",obtByte(op2,n2-1 -i));
+        printf("%02X ",devolverByte(op2,n2-1 -i));
     }
     for(int i=0; i < n1; i++){
-        printf("%02X ",obtByte(op1,n1-1 -i));
+        printf("%02X ",devolverByte(op1,n1-1 -i));
     }
     printf("\t\t| ");
     printf("%s \t",mnemonicos[opc & 0x1F]);
@@ -152,15 +150,13 @@ void pasoDisassembler(unsigned int * dirInstr){
     *dirInstr = direccionInstruccion;
 }
 
-
 void mostrarAssembler(unsigned int tamCod){
     unsigned int direccionInstruccion = 0; // actualmente el comienzo del cs está en 0, esto se podría cambiar de ser necesario
     
-    printf(" -------- -------- -------- --------\n");
-    printf("Inicio disassembler\n\n");
+    printf("\n \t\t Disassembler \n");
+    printf(" -------- -------- -------- --------\n\n");
     while(direccionInstruccion < tamCod){
         pasoDisassembler(&direccionInstruccion);
     }
-    printf("\nFin disassembler\n");
-    printf(" -------- -------- -------- --------\n\n");
+    printf("\n -------- -------- -------- --------\n\n");
 }

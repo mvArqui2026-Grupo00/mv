@@ -1,4 +1,9 @@
-#include "procesador.c" //no hacemos include de los demás módulos o librerias porque ya están incluidas en la concatenación de include...
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#include "procesador.h"
+#include "estructuras.h"
 
 void inicializarMemoria(short int tamCod, FILE *f) {
     unsigned char byte;
@@ -31,18 +36,20 @@ int main(int argc, char *argv[]){
     // arg0 -> "vmx"
     // arg1 -> "filename.vmx"
     // arg2 -> "-d" (opcional)
-    printf("\n");
-    char *archivoBin = argv[1]; 
-    printf("Archivo Binario: \"%s\"\n",archivoBin);
-    FILE *f = fopen(archivoBin,"rb");
-    if (f != NULL){
-        char identif[6], identifLect[5];
-        char byteVersion;
-        unsigned char byte1, byte2;
 
-        int version;
-        short int tamCod;
-        int disassembler;
+    FILE *f;
+    char *archivoBin;
+    char identif[6], identifLect[5], byteVersion;
+    unsigned char byte1, byte2;
+    int version, disassembler;
+    short int tamCod;
+
+    printf("\n");
+    archivoBin = argv[1]; 
+    printf("Archivo Binario: \"%s\"\n",archivoBin);
+    f = fopen(archivoBin,"rb");
+    if (f != NULL){
+        
 
         fread(identifLect,1,5,f);
         for (int i=0;i<5;i++)
@@ -52,10 +59,6 @@ int main(int argc, char *argv[]){
         fread(&byteVersion,1,1,f);
         version = byteVersion;
         
-        // es necesario armar el numero de 2 bytes a mano
-        // porque el compilador de C trabaja con Little-Endian
-        // y el traductor trabaja con Big-Endian
-        // entonces al leer directamente al número lo lee al revés
         fread(&byte1,1,1,f);
         fread(&byte2,1,1,f);
         tamCod = byte1;
@@ -65,7 +68,6 @@ int main(int argc, char *argv[]){
         printf("Identificador: %s \nVersion: %d \nTamaño del Código: %d bytes \n\n",identif,version,tamCod);
 
         if ((strcmp(identif,"VMX26") == 0) && version == 1){
-            printf("se pudo loco\n");
             inicializarMemoria(tamCod,f); // pasamos el puntero a archivo apuntando al inicio del "code segment"
             fclose(f);
             inicializarTablaSegm(tamCod);
@@ -81,12 +83,13 @@ int main(int argc, char *argv[]){
             return 0;
         }
         else{
-            printf("archivo incorrecto loco");
+            printf("\narchivo incorrecto loco\n");
+            return 1;
         }
     }
     else{
-        printf("\nno se pudo abrir el binario, loco \n\n");
-        printf("(╥﹏╥) \n");
+        printf("\nno se pudo abrir el binario, loco \n");
+        printf("(╥﹏╥) \n\n");
     }
     return 1;
 }

@@ -1,8 +1,18 @@
-#define CANT_REGISTROS 32
+#include "estructuras.h"
 
+Segmento tablaSegm[CANT_SEGM];
+unsigned char memoria[CANT_CELDAS];
 int registros[CANT_REGISTROS]; // 4 bytes cada registro
 
-/*
+/*  Tabla de Segmentos
+    0 -> Code Segment
+    1 -> Data Segment
+    2 - 7 -> reservadas
+
+*/
+
+
+/*  REGISTROS
     0 -> IP (Instruction Pointer)
     1 -> OPC (Operation Code)
     2 -> OP1 (Operando 1)

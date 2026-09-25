@@ -1,30 +1,24 @@
-// quitar las redundantes o innecesarias
+#include <stdio.h>
+#include <stdint.h>
+#include "procesador.h"
 #include "puntFunc.c"
-
-void testOperandos(int opc, int op1, int op2){
-    printf("\nOperación: ");
-    imprimirHexa(opc,1);
-
-    printf("\nOperando 1: ");
-    imprimirHexa(op1,4);
-    printf(" | %d | %c",op1 & 0xFFFFFF, op1 & 0xFF);
-
-    printf("\nOperando 2: ");
-    imprimirHexa(op2,4);
-    printf(" | %d | %c",op2 & 0xFFFFFF, op2 & 0xFF);
-    printf("\n");
-}
+#include "mnemonicos.h"
+#include "funcionesAuxiliares.h"
+#include "estructuras.h"
+#include "disassembler.h"
 
 void paso(){
+    unsigned char instr, opc;
+    int16_t direccionInstruccion;
+    int op1, op2, n;
+
     registros[4] = registros[0];
     calcularPunteroFisico(1); // leemos de a byte
     leerDeMemoria();
-    unsigned char instr = registros[6]; // lo que está en mbr
-    short int direccionInstruccion = registros[5] & 0xFFFF; // obtengo el offset desde el cs para pasarselo al disassembler
-    unsigned char opc;
-    int op1;
-    int op2;
-    opc = instr & 0X1F; // opc
+    instr = registros[6]; // lo que está en mbr
+    direccionInstruccion = registros[5] & 0xFFFF; // obtengo el offset desde el cs para pasarselo al disassembler
+    opc = instr & 0X1F;
+
     if (opc == 0x0F) // operación de 0 operandos
         op1 = op2 = 0;
     else
@@ -41,7 +35,7 @@ void paso(){
     registros[4] = registros[0];
 
 
-    int n = op2;
+    n = op2;
     calcularPunteroFisico(n);
     leerDeMemoria();
     op2 = op2 << 24;
@@ -66,7 +60,6 @@ void paso(){
 }
 
 void procesa(){
-
     // sigue mientras el IP apunte dentro del segmento de código (el 0 de la tabla) y no haya ocurrido un error
     while ( ( (registros[0] >> 16) == 0) && ( (registros[0] & 0xFFFF) < tablaSegm[0].tamaño)){
         paso();
