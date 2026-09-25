@@ -36,7 +36,7 @@ int main(int argc, char *argv[]){
     printf("Archivo Binario: \"%s\"\n",archivoBin);
     FILE *f = fopen(archivoBin,"rb");
     if (f != NULL){
-        char identif[5];
+        char identif[6], identifLect[5];
         char byteVersion;
         unsigned char byte1, byte2;
 
@@ -44,7 +44,10 @@ int main(int argc, char *argv[]){
         short int tamCod;
         int disassembler;
 
-        fread(identif,1,5,f);
+        fread(identifLect,1,5,f);
+        for (int i=0;i<5;i++)
+            identif[i] = identifLect[i];
+        identif[5] = '\0';
 
         fread(&byteVersion,1,1,f);
         version = byteVersion;
@@ -62,6 +65,7 @@ int main(int argc, char *argv[]){
         printf("Identificador: %s \nVersion: %d \nTamaño del Código: %d bytes \n\n",identif,version,tamCod);
 
         if ((strcmp(identif,"VMX26") == 0) && version == 1){
+            printf("se pudo loco\n");
             inicializarMemoria(tamCod,f); // pasamos el puntero a archivo apuntando al inicio del "code segment"
             fclose(f);
             inicializarTablaSegm(tamCod);
@@ -75,6 +79,9 @@ int main(int argc, char *argv[]){
 
             procesa();
             return 0;
+        }
+        else{
+            printf("archivo incorrecto loco");
         }
     }
     else{
