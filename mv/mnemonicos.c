@@ -39,7 +39,7 @@ void sysRead(){
         registros[4] = direccionLogica; // config lar
         comprobarFalloSegmento();
         calcularPunteroFisico(tamano); // config mar
-        dirFisica = registros[5] && 0xFFFF;
+        dirFisica = registros[5] & 0xFFFF;
 
         valor = 0;
         unsigned char texto[33]; // solo para el binario: hasta 32 bits + '\0'

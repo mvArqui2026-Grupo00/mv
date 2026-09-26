@@ -149,7 +149,6 @@ void escribirEnMemoria(){
     n = devolverByte(registros[5],2);
     int posFisica = registros[5] & 0xFFFF;
 
-    int aux = 0; // por las dudas que el n sea 0, hay que verificarlo en el testing
     for(int i=0; i < n; i++){
         memoria[posFisica+i] = devolverByte(mbr,n-1 -i);
     }
