@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdint.h>
 #include "funcionesAuxiliares.h"
 #include "estructuras.h"
 
@@ -96,7 +97,9 @@ int leerOperando(int operando){
             return registros[datosOperando & 0x1F];
 
         case 2: // inmediato
-            return (datosOperando & 0xFFFF);
+            int16_t aux16 = datosOperando & 0xFFFF;
+            int32_t aux = aux16; // esto para convertir correctamente inmediatos negativos
+            return (aux);
 
         case 3: // memoria
             calcularPunteroLogico(datosOperando);

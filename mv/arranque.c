@@ -49,7 +49,7 @@ int main(int argc, char *argv[]){
 
     printf("\n");
     archivoBin = argv[1]; 
-    printf("Archivo Binario: \"%s\"\n",archivoBin);
+//    printf("Archivo Binario: \"%s\"\n",archivoBin);
     f = fopen(archivoBin,"rb");
     if (f != NULL){
         
@@ -68,7 +68,7 @@ int main(int argc, char *argv[]){
         tamCod = tamCod << 8;
         tamCod |= byte2;
 
-        printf("Identificador: %s \nVersion: %d \nTamanio del Codigo: %d bytes \n\n",identif,version,tamCod);
+//        printf("Identificador: %s \nVersion: %d \nTamanio del Codigo: %d bytes \n\n",identif,version,tamCod);
 
         if ((strcmp(identif,"VMX26") == 0) && version == 1){
             inicializarMemoria(tamCod,f); // pasamos el puntero a archivo apuntando al inicio del "code segment"
@@ -86,13 +86,13 @@ int main(int argc, char *argv[]){
             return 0;
         }
         else{
-            printf("\narchivo incorrecto loco\n");
+//            printf("\narchivo incorrecto loco\n");
             return 1;
         }
     }
     else{
-        printf("\nno se pudo abrir el binario, loco \n");
-        printf("(╥﹏╥) \n\n");
+//        printf("\nno se pudo abrir el binario, loco \n");
+//        printf("(╥﹏╥) \n\n");
     }
     return 1;
 }

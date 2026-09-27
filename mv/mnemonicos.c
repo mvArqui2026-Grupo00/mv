@@ -12,7 +12,7 @@
 //--------------    NO DEFINIDO  ---------------------
 
 void notDefined(){
-    printf("Error: Mnemónico no Definido");
+    printf("Error: Mnemonico no Definido");
     exit(1);
 }
 
@@ -171,6 +171,8 @@ int overflow(){
 void jmp(){
     registros[0] &= 0xFFFF0000;
     registros[0] += leerOperando(registros[2]);
+
+    registros[4] = registros[0];
     comprobarFalloSegmento();
 }
 
@@ -247,9 +249,9 @@ void verificarCarryOverflowSuma(int valor1, int valor2, int suma, int * carry, i
     if ((longSuma >> 32) != 0)
         *carry = 1;
 
-    if ((valor1 > 0 && valor2 > 0) && suma <= 0)
+    if ((valor1 > 0 && valor2 > 0) && (suma <= 0))
         *overflow = 1;
-    if ((valor1 < 0 && valor2 < 0) && suma >= 0)
+    if ((valor1 < 0 && valor2 < 0) && (suma >= 0))
         *overflow = 1;
 }
 
@@ -298,7 +300,7 @@ void divis(){
     int valor2 = leerOperando(registros[3]);
     int cociente;
     int resto;
-    //  !!!
+
     if (valor2 != 0){
         cociente = valor1 / valor2;   //  Realiza DIVISION ENTERA
         resto = valor1 % valor2;      //  Guarda el RESTO
@@ -308,7 +310,7 @@ void divis(){
         registros[16] = resto;     //  Guarda RESTO en AC
     }
     else{
-        printf("Error: División por cero\n");
+        printf("Error: Division por cero\n");
         exit(1);
     }
 }
@@ -337,7 +339,7 @@ void or(){
     int valor1 = leerOperando(registros[2]);
     int valor2 = leerOperando(registros[3]);
     int resultado = valor1 | valor2;
-
+ 
     setCC(resultado,0,0);
     escribirOperando(registros[2], resultado);}
 
@@ -351,9 +353,16 @@ void xor(){
 }
 
 void swap(){
-    xor();
-    xor();
-    xor();
+    int valor1 = leerOperando(registros[2]);
+    int valor2 = leerOperando(registros[3]);
+
+    valor1 = valor1 ^ valor2;
+    valor2 = valor1 ^ valor2;
+    valor1 = valor1 ^ valor2;
+
+    setCC(valor1,0,0);
+    escribirOperando(registros[2], valor1);
+    escribirOperando(registros[3], valor2);
 }
 
 void shl(){
@@ -366,18 +375,18 @@ void shl(){
     int carry = 0;
     int overflow = 0;
 
-    int64_t longResultado = (int64_t) valor << cantidad;
-    if ((longResultado & 0xFFFF0000) != 0)
+    int64_t longResultado = (int64_t)valor << cantidad;
+    if ((longResultado >> 32) != 0)
         carry = 1;
 
-    if (valor > 0 && resultado < 0)
+    if (valor > 0 && resultado <= 0)
         overflow = 1;
-    if (valor < 0 && resultado > 0)
+    if (valor < 0 && resultado >= 0)
         overflow = 1;
 
     setCC(resultado, carry, overflow);
 
-    escribirOperando(operando, valor);
+    escribirOperando(operando, resultado);
 }
 
 void shr(){
@@ -385,9 +394,9 @@ void shr(){
     int valorConSigno = leerOperando(operando); // valor real de A (no el descriptor)
     unsigned int valor = (unsigned int)valorConSigno;
     int cantidad = leerOperando(registros[3]); // op2
-
+    
     valor = valor >> cantidad;
-
+ 
     int overflow = ((valorConSigno & 0x80000000) != 0); // si originalmente el número es negativo, hay overflow
     setCC(valor, 0, overflow);
     escribirOperando(operando, valor);

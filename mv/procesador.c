@@ -66,8 +66,8 @@ void procesa(){
         paso();
     }
     
-    printf("\n -------------------------------------------\n");
-    printf("\nദി(˵ •̀ ᴗ - ˵ ) ✧ \n\n");
-    printf(":: Gracias por compilar (: \n:: GLASS Group S.L.R - Departamento de Codificacion Assembler\n\n");
+//    printf("\n -------------------------------------------\n");
+//    printf("\nദി(˵ •̀ ᴗ - ˵ ) ✧ \n\n");
+//    printf(":: Gracias por compilar (: \n:: GLASS Group S.L.R - Departamento de Codificacion Assembler\n\n");
     //subdivisión Grupo 0x00 -> departamento oficial encargado de la interpretación y ejecución Assembly
 }
