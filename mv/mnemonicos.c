@@ -203,7 +203,7 @@ void jnp(){
 }
 void jnn(){
     if (!negative())
-        jmp;
+        jmp();
 }
 void jnz(){
     if (!cero()){
@@ -288,8 +288,9 @@ void mul(){
 
     int carry = 0;
     int overflow = 0;
-    int64_t longProducto = (int64_t)abs(valor1) * (int64_t)abs(valor2);
-    if ((longProducto >> 32) != 0)
+    int64_t longProducto = (int64_t)valor1 * (int64_t)valor2;
+
+    if (((longProducto >> 32) & 0xFFFFFFFF) != 0)
         carry = overflow = 1;
     setCC(producto, carry, overflow);
     escribirOperando(registros[2], producto);   //  Escribe 'producto' en OP1;

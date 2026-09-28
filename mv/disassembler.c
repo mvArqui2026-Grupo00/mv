@@ -88,7 +88,9 @@ void mostrarOperando(unsigned int tipo, int operando){
             printf("%s",reg[operando]);
             break;
         case 2:
-            printf("%d",operando);
+            int16_t aux16 = operando & 0xFFFF;
+            int32_t aux = aux16; // esto para convertir correctamente inmediatos negativos
+            printf("%d",aux);
             break;
         case 3:
             printf("[%s+%d]", reg[operando & 0x1F], (operando & 0xFFFF00) >> 8);
