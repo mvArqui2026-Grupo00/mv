@@ -13,6 +13,14 @@ void paso(){
     int16_t direccionInstruccion;
     int op1, op2, n;
 
+    // como no tenemos que modificar los registros de memoria al leer una instrucción, pero para no modificar/crear funciones vamos a guardar los valores de los registros
+    // ~ proceso similar a los push de una subrutina en assembly
+
+    // guardamos los valores de los registros de memoria
+    int lar = registros[4]; 
+    int mar = registros[5];
+    int mbr = registros[6];
+
     registros[4] = registros[0];
     calcularPunteroFisico(1); // leemos de a byte
     leerDeMemoria();
@@ -56,6 +64,11 @@ void paso(){
     registros[1] = opc;
     registros[2] = op1;
     registros[3] = op2;
+
+    // devolvemos los registros de memoria como estaban antes de procesar la instrucción
+    registros[4] = lar;
+    registros[5] = mar;
+    registros[6] = mbr;
 
     funciones[opc]();
 }
