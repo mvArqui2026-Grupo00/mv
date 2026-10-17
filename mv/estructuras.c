@@ -21,6 +21,9 @@ int registros[CANT_REGISTROS]; // 4 bytes cada registro
     5 -> MAR (Memory Address Register)
     6 -> MBR (Memory Buffer Register)
 
+    7 -> SP (Stack Pointer)
+    8 -> BP (Base Pointer)
+
     10 -> EAX (General Purpose Registers)
     11 -> EBX (General Purpose Registers)
     12 -> ECX (General Purpose Registers)
@@ -32,4 +35,8 @@ int registros[CANT_REGISTROS]; // 4 bytes cada registro
     
     26 -> CS (Puntero al inicio del Code Segment)
     27 -> DS (Puntero al inicio del Data Segment)
+    28 -> ES (Puntero al inicio del Extra Segment)
+    29 -> SS (Puntero al inicio del Stack Segment)
+    30 -> KS (Puntero al inicio del Const Segment)
+    31 -> PS (Puntero al inicio del Param Segment)
 */

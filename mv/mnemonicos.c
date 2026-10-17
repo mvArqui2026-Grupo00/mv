@@ -23,7 +23,23 @@ void stop(){
     registros[0] = -1; // ip = 0xFFFFFFFF
 }
 
+void ret(){
+
+}
+
 //--------------    UN OPERANDO   --------------------
+
+void push(){
+
+}
+
+void pop(){
+
+}
+
+void call(){
+
+}
 
 //modos del Sys
 void sysRead(){

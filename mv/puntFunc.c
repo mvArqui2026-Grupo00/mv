@@ -16,12 +16,14 @@ void inicializarPunteroFunciones(){
     funciones[8] = jnn;
     funciones[9] = jnz;
     funciones[10] = not; 
-    // funciones que no se desarrollan en esta parte
-    funciones[11] = notDefined;
-    funciones[12] = notDefined;
-    funciones[13] = notDefined;
-    funciones[14] = notDefined;
+
+    // funciones agregadas en la 2da parte
+    funciones[11] = push;
+    funciones[12] = pop;
+    funciones[13] = call;
+    funciones[14] = ret;
     //
+
     funciones[15] = stop;    
     funciones[16] = mov;
     funciones[17] = add;

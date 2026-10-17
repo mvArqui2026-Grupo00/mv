@@ -3,6 +3,10 @@
 
 void notDefined();
 void stop();
+void ret();
+void push();
+void pop();
+void call();
 void sysRead();
 void sysWrite();
 void sys();
