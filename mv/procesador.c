@@ -71,6 +71,8 @@ void paso(){
     registros[6] = mbr;
 
     funciones[opc]();
+//    if (variableBooleanaBreakpoint)
+//       breakpoint();
 }
 
 void procesa(){

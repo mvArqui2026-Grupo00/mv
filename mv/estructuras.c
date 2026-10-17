@@ -1,13 +1,28 @@
 #include "estructuras.h"
 
+/*if (tamMemoria > 0) // esto no funciona
+    unsigned char memoria[tamMemoria];;
+else
+    unsigned char memoria[CANT_CELDAS];*/
 Segmento tablaSegm[CANT_SEGM];
-unsigned char memoria[CANT_CELDAS];
+unsigned char memoria[CANT_CELDAS]; // CAMBIAR ??
 int registros[CANT_REGISTROS]; // 4 bytes cada registro
 
 /*  Tabla de Segmentos
-    0 -> Code Segment
-    1 -> Data Segment
-    2 - 7 -> reservadas
+    0 - 5 -> variables
+    6 -7 -> -1 (no se usan nunca)
+
+    CS y SS si o si están
+    el resto pueden no estar
+
+    el orden es
+    Param
+    Constant
+    Code
+
+    Data
+    Extra
+    Stack
 
 */
 
