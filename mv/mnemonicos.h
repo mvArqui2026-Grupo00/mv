@@ -9,6 +9,8 @@ void pop();
 void call();
 void sysRead();
 void sysWrite();
+void ClearScreen();
+void BreakPoint();
 void sys();
 int negative();
 int cero();

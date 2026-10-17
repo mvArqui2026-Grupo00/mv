@@ -3,6 +3,8 @@
 Segmento tablaSegm[CANT_SEGM];
 unsigned char memoria[CANT_CELDAS];
 int registros[CANT_REGISTROS]; // 4 bytes cada registro
+int hayImagen = 0;   // 1 si se recibió un archivo .vmi por parámetro
+int pasoAPaso = 0;   // 1 si el usuario apretó Enter en un breakpoint
 
 /*  Tabla de Segmentos
     0 -> Code Segment

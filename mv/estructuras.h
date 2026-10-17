@@ -13,5 +13,7 @@ typedef struct {
 extern Segmento tablaSegm[CANT_SEGM];
 extern unsigned char memoria[CANT_CELDAS];
 extern int registros[CANT_REGISTROS]; // 4 bytes cada registro
+extern int hayImagen;
+extern int pasoAPaso;
 
 #endif

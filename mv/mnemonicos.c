@@ -142,6 +142,31 @@ void sysWrite(){
     }
 }
 
+void clearScreen(){
+    printf("\033[2J\033[H");
+    // \033 : es el caracter ESC
+    // [ : es el aviso de que viene una secuencia de control con parámetros.
+    // 2J : es el parametro de la orden, que indica que borre toda la pantalla
+    // \033[H : Otra vez escape y que lleve el cursor a la posicion inicial
+}
+
+void BreakPoint(){
+    if (hayImagen){
+        generarImagen();
+
+        char linea[10];
+        fgets(linea, sizeof(linea), stdin);
+
+        switch(linea[0]){
+            case 'g': pasoAPaso = 0;
+                break;
+            case 'q':
+                exit(0);
+            case '\n': pasoAPaso = 1;
+                break;
+        }
+    }
+}
 void sys(){
     int operando = registros[2]; // OP1: único operando (código de llamada al sistema)
     int numeroLlamada = leerOperando(operando);
@@ -153,8 +178,20 @@ void sys(){
         case 2: // WRITE
             sysWrite();
             break;
-        default:
+        case 3: 
+            stringRead();
             break;
+        case 4:
+            stringWrite();
+            break;
+        case 0:
+            clearScreen();
+            break;
+        case 15:
+            breakPoint();
+            break;
+        default:
+            break;    
     }
 }
 

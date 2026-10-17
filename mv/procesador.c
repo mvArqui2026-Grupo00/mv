@@ -71,6 +71,17 @@ void paso(){
     registros[6] = mbr;
 
     funciones[opc]();
+
+    if (pasoAPaso){
+    int fueBreakpoint = 0;
+
+    if (registros[1] == 0)                      // OPC 0 = SYS
+        if (leerOperando(registros[2]) == 0xF)  // llamada 0xF = breakpoint
+            fueBreakpoint = 1;
+
+    if (!fueBreakpoint)
+        BreakPoint();
+}
 }
 
 void procesa(){
