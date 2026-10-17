@@ -84,7 +84,7 @@ void comprobarFalloSegmento(){
         printf("\nError: Fallo de Segmento \n");
         exit(1);
     }
-        
+
 }
 
 
@@ -94,7 +94,30 @@ int leerOperando(int operando){
 
     switch (tipo){
         case 1: // registro
-            return registros[datosOperando & 0x1F];
+            int letter = datosOperando & 0x1F;
+            int sector = (datosOperando>>5) & 0b11;
+            int value = registros[letter];
+
+            switch (sector){
+            /// case 0       E A X
+            //      NO SE EVALUA YA QUE SE MANDAN 4 BYTES POR IGUAL
+
+                case 1: ///  A L
+                    value = value & 0xFF;
+                    break;
+
+                case 2: ///  A H
+                    value = (value & 0xFF00) >> 8;
+                    break;
+
+                case 3: ///  A X
+                    value = (value & 0xFFFF);
+                    break;
+
+                default:
+                    break;
+            }
+            return value;
 
         case 2: // inmediato
             int16_t aux16 = datosOperando & 0xFFFF;
@@ -117,7 +140,34 @@ void escribirOperando(int operando, int valor){
 
     switch (tipo){
         case 1: // registro
-            registros[datosOperando & 0x1F] = valor;
+            int sector = (datosOperando >> 5) & 0b11;
+            int letter = datosOperando & 1F;
+            int value = valor;
+
+            switch(sector){
+            /// case(0):
+            //      No se analiza ya que manda 4 bytes por igual
+
+                case 1:
+                    value = (value >> 24) & 0xFF;
+                    value |= registros[letter] & 0xFFFFFF00;
+                    break;
+
+                case 2:
+                    value = (value >> 24) & 0xFF00;
+                    value |= registros[letter] & 0xFFFF00FF;
+                    break;
+
+                case 3:
+                    value = (value >> 16) & 0xFFFF;
+                    value |= registros[letter] & 0xFFFF0000;
+                    break;
+
+                default:
+                    break;
+
+            }
+            registros[letter] = value;
             break;
 
         case 3: // memoria
