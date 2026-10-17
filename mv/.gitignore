@@ -1,8 +1,13 @@
 #testing
+pruebas
 *.vmx
 *.asm
+
 vmt
-vmx
 vmt.exe
+
+vmx
 vmx.exe
-pruebas
+
+vmg
+vmg.exe
