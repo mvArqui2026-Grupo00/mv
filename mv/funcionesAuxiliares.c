@@ -87,7 +87,6 @@ void comprobarFalloSegmento(){
 
 }
 
-
 int leerOperando(int operando){
     int tipo = (devolverByte(operando,3));
     int datosOperando = operando & 0xFFFFFF;
@@ -104,14 +103,17 @@ int leerOperando(int operando){
 
                 case 1: ///  A L
                     value = value & 0xFF;
+                    value = (value << 24) >> 24;    // BETA: Propagacion de signo
                     break;
 
                 case 2: ///  A H
                     value = (value & 0xFF00) >> 8;
+                    value = (value << 24) >> 24;    // BETA: Propagacion de signo
                     break;
 
                 case 3: ///  A X
                     value = (value & 0xFFFF);
+                    value = (value << 16) >> 16;    // BETA: Propagacion de signo
                     break;
 
                 default:
@@ -126,7 +128,23 @@ int leerOperando(int operando){
 
         case 3: // memoria
             calcularPunteroLogico(datosOperando);
-            calcularPunteroFisico(4);
+
+            /// BETA
+
+            cantBytes = (datosOperando & 0xFF) >> 5; // Determina la cantidad de bytes a leer/escribir
+
+            switch (cantBytes){
+                case 0b001:
+                    calcularPunteroFisico(1);
+                    break;
+                case 0b010:
+                    calcularPunteroFisico(2);
+                    break;
+                default:
+                    calcularPunteroFisico(4);
+                    break;
+            }
+
             leerDeMemoria();
             return registros[6];
         default: // ninguno
@@ -145,20 +163,20 @@ void escribirOperando(int operando, int valor){
             int value = valor;
 
             switch(sector){
-            /// case(0):
+            /// case 0       E A X
             //      No se analiza ya que manda 4 bytes por igual
 
-                case 1:
+                case 1: ///  A L
                     value = (value >> 24) & 0xFF;
                     value |= registros[letter] & 0xFFFFFF00;
                     break;
 
-                case 2:
+                case 2: ///  A H
                     value = (value >> 24) & 0xFF00;
                     value |= registros[letter] & 0xFFFF00FF;
                     break;
 
-                case 3:
+                case 3: ///  A X
                     value = (value >> 16) & 0xFFFF;
                     value |= registros[letter] & 0xFFFF0000;
                     break;
@@ -172,7 +190,21 @@ void escribirOperando(int operando, int valor){
 
         case 3: // memoria
             calcularPunteroLogico(datosOperando);
-            calcularPunteroFisico(4);
+            /// CHANGES ANAsHE
+            cantBytes = (datosOperando & 0xFF) >> 5; // Determina la cantidad de bytes a leer/escribir
+
+            switch (cantBytes){
+                case 0b001:
+                    calcularPunteroFisico(1);
+                    break;
+                case 0b010:
+                    calcularPunteroFisico(2);
+                    break;
+                default:
+                    calcularPunteroFisico(4);
+                    break;
+            }
+            ///---
             escribirMBR(valor);
             escribirEnMemoria();
             break;

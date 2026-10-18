@@ -46,7 +46,7 @@ void pop(){
     int aux = registros[29] + STACK_SEGMENT_SIZE; //  Direccion Stack Segment + Cantidad de bytes en SS
     /// STACK_SEGMENT_SIZE A DETERMINAR
 
-    if( registros[7] > aux){                 //  2 - Si SP apunta a una direccion fuera del segmento de PILA => Stack Overflow
+    if( registros[7] > aux){                 //  2 - Si SP apunta a una direccion fuera del segmento de PILA => Stack UNDERflow
         printf(":: [!] Stack underflow.");
         exit(1);
     }
