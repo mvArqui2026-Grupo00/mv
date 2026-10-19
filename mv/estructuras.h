@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 #define CANT_REGISTROS 32
-#define CANT_CELDAS 16384 // 16 KiB -> 2^(10+4) -> 16384
+#define CANT_CELDAS 16384 // (Cantidad predeterminada de bytes en mem ppal) 16 KiB -> 2^(10+4) -> 16384
 #define CANT_SEGM 8
 
 typedef struct {

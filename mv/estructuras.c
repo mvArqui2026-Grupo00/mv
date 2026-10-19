@@ -1,11 +1,16 @@
 #include "estructuras.h"
+#include <stdlib.h>
 
-/*if (tamMemoria > 0) // esto no funciona
-    unsigned char memoria[tamMemoria];;
-else
-    unsigned char memoria[CANT_CELDAS];*/
+void inicializarMemoria(int tamaño){ // expresado en KiB (ejemplo: 10KiB -> 10240 bytes)
+    memoria = malloc(sizeof(unsigned char) * tamaño);
+    if (memoria = NULL){
+        print("Error: Problema al reservar memoria en el heap de tu computadora física (RARO)");
+        exit(1);
+    }
+}
+
 Segmento tablaSegm[CANT_SEGM];
-unsigned char memoria[CANT_CELDAS]; // CAMBIAR ??
+unsigned char *memoria;
 int registros[CANT_REGISTROS]; // 4 bytes cada registro
 
 /*  Tabla de Segmentos

@@ -63,8 +63,7 @@ void mostrarTablaSegm(){
 
 //  FUNCIONES AUXILIARES
 
-unsigned char devolverByte(unsigned int dato, int nroByte){ // que nombre le ponemos a los parámetros
-    // el nro byte es el byte a devolver, siendo 0 el byte de menor significado, 1: el segundo de menor significado, ....
+unsigned char devolverByte(unsigned int dato, int nroByte){ // el nro byte es el byte a devolver, siendo 0 el byte de menor significado, 1: el segundo de menor significado, ....
     dato = dato >> (8 * nroByte);
     dato &= 0xFF;
     unsigned char aux = dato;

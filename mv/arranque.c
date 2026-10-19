@@ -8,53 +8,66 @@
 #include "estructuras.h"
 #include "disassembler.h"
 
+
+
+unsigned short int leerTam(FILE *f){
+    unsigned char byte1,byte2;
+    unsigned short int aux;
+    fread(&byte1,1,1,f);
+    fread(&byte2,1,1,f);
+    aux = byte1;
+    aux = aux << 8;
+    aux |= byte2;
+    return aux;
+}
+
 void inicializarVersion1(FILE *f,int tamCod){
-    inicializarMemoria(1,tamCod,f); // pasamos el puntero a archivo apuntando al inicio del "code segment"
+    inicializarMemoria(CANT_CELDAS);
+    inicializarSegm(tamCod,CANT_CELDAS-tamCod,0,0,0,0);
+    inicializarCodeSegment(tamCod,f); // pasamos el puntero a archivo apuntando al inicio del "code segment"
     fclose(f);
-    inicializarTablaSegm(1,tamCod);
-    inicializarRegistros(1);
+
+    registros[0] = 0x00000000;
     inicializarPunteroFunciones(1);
 }
 
-void inicializarVersion2(FILE *f,unsigned int tamCod, unsigned int tamData, unsigned int tamExtra, unsigned int tamStack, unsigned int tamConst, unsigned int tamParam, unsigned int offsetEntryPoint){
-    inicializarTablaSegmVersion2(tamCod,tamData,tamExtra,tamStack,tamConst,tamParam);
+void inicializarVersion2(FILE *f,unsigned int tamCod, unsigned int tamData, unsigned int tamExtra, unsigned int tamStack, unsigned int tamConst, unsigned int tamParam, unsigned int tamMemoria, unsigned int offsetEntryPoint){
+    inicializarMemoria(tamMemoria);
+    inicializarSegm(tamCod,tamData,tamExtra,tamStack,tamConst,tamParam);
     inicializarCodeSegment(tamCod,f);
     fclose(f);
-    inicializarRegistros(2);
+
     registros[0] += offsetEntryPoint;
+    registros[7] = registros[29] + tablaSegm[devolverByte(registros[29],2)].tamaño; // sp inicializado en ss + SS.Tamaño (posición fuera del Stack Segment)
     inicializarPunteroFunciones(2);
 }
 
-void inicializarCodeSegment(short int tamCod, FILE *f) { // cambio de nombre???
+void inicializarCodeSegment(short int tamCod, FILE *f) { // se debe pasar el puntero f referenciando al comienzo del código
     unsigned char byte;
-    int base = registros[26];
+    registros[4] = registros[26];
+    calcularPunteroFisico(1);
+    int base = registros[5] & 0xFFFF;
     for (int i = 0; i < tamCod; i++){
         fread(&byte,1,1,f);
         memoria[base+i] = byte;
-        //printf("\n%02X\n",byte);
     }
 }
 
-void inicializarTablaSegm(int version,short int tamCod){ // CAMBIAR
-    if (version == 1){
-        tablaSegm[0].base = 0;
-        tablaSegm[0].tamaño = tamCod;
-        tablaSegm[1].base = tamCod;
-        tablaSegm[1].tamaño = CANT_CELDAS - tamCod;
-
-        for (int i = 2; i < 8; i++){
-            tablaSegm[i].base = -1;
-            tablaSegm[i].tamaño = -1;
-        }
-    }
-    else{
-
+void inicializarConstSegment(short int tamConst,FILE *f) { // se debe pasar el puntero f referenciando al comienzo de las constantes
+    unsigned char byte;
+    registros[4] = registros[30]; // uso el KS
+    calcularPunteroFisico(1);
+    int base = registros[5] & 0xFFFF;
+    for (int i = 0; i < tamConst; i++){
+        fread(&byte,1,1,f);
+        memoria[base+i] = byte;
     }
 }
 
-void inicializarTablaSegmVersion2(unsigned int tamCod, unsigned int tamData, unsigned int tamExtra, unsigned int tamStack, unsigned int tamConst, unsigned int tamParam){
+
+void inicializarSegm(unsigned int tamCod, unsigned int tamData, unsigned int tamExtra, unsigned int tamStack, unsigned int tamConst, unsigned int tamParam){
     int i = 0, y = -1; // i para recorrer el vec, y para recorrer la tablaSegm
-    unsigned int vec[6] = {tamCod,tamData,tamExtra,tamStack,tamConst,tamParam};
+    unsigned int vec[6] = {tamParam,tamConst,tamCod,tamData,tamExtra,tamStack}; // este orden es crucial
     int aux;
 
     for (;i<6;i++){
@@ -80,17 +93,12 @@ void inicializarTablaSegmVersion2(unsigned int tamCod, unsigned int tamData, uns
 
 }
 
-void inicializarRegistros(int version){ // CAMBIAR
-    if (version == 1){
-        registros[26] = 0x00000000;
-        registros[27] = 0x00000000;
-        registros[0] = registros[26];
-    }
-    else{
-        registros[0] = registros[26] ; // ip        
-        registros[7] = registros[29] + tablaSegm[devolverByte(registros[29],2)].tamaño; // sp inicializado en ss + SS.Tamaño (posición fuera del Stack Segment)
-    }
-}
+
+
+
+
+
+
 
 int main(int argc, char *argv[]){
     // arg0 -> "vmx"
@@ -107,75 +115,54 @@ int main(int argc, char *argv[]){
     printf("\n");
     archivoBin = argv[1]; 
     f = fopen(archivoBin,"rb");
-    if (f != NULL){
-        
+
+    if (f == NULL)
+        return 1;
+    else {
 
         fread(identifLect,1,5,f);
         for (int i=0;i<5;i++)
             identif[i] = identifLect[i];
         identif[5] = '\0';
 
+        if (strcmp(identif,"VMX26") != 0){
+            return 1;
+        }
+
         fread(&byteVersion,1,1,f);
         version = byteVersion;
         
-        fread(&byte1,1,1,f);
-        fread(&byte2,1,1,f);
-        tamCod = byte1;
-        tamCod = tamCod << 8;
-        tamCod |= byte2;
+        tamCod = leerTam(f);
 
-        if (version == 2){
-            // DATA
-            fread(&byte1,1,1,f);
-            fread(&byte2,1,1,f);
-            tamData = byte1;
-            tamData = tamCod << 8;
-            tamData |= byte2;
+        if (version == 1){
+            inicializarVersion1(f,tamCod);
 
-            // EXTRA
-            fread(&byte1,1,1,f);
-            fread(&byte2,1,1,f);
-            tamExtra = byte1;
-            tamExtra = tamCod << 8;
-            tamExtra |= byte2;
+            disassembler = ((argc >= 3) && (strcmp(argv[2],"-d") == 0));
+            if (disassembler)
+                mostrarAssembler(tamCod,1);
 
-            // STACK
-            fread(&byte1,1,1,f);
-            fread(&byte2,1,1,f);
-            tamStack = byte1;
-            tamStack = tamCod << 8;
-            tamStack |= byte2;
-
-            // CONST
-            fread(&byte1,1,1,f);
-            fread(&byte2,1,1,f);
-            tamConst = byte1;
-            tamConst = tamCod << 8;
-            tamConst |= byte2;
-
-            // Offset Entry Point
-            fread(&byte1,1,1,f);
-            fread(&byte2,1,1,f);
-            offsetEntryPoint = byte1;
-            offsetEntryPoint = tamCod << 8;
-            offsetEntryPoint |= byte2;
+            procesa();
+            return 0;
         }
 
+        if (version == 2){
+            // obtener tamMemoria
+            unsigned int tamMemoria;
 
-        if ((strcmp(identif,"VMX26") == 0) && (version == 1 || version == 2)){
-            if (version == 1) {
-                inicializarVersion1(f,tamCod);
+            tamData = leerTam(f);
+            tamExtra = leerTam(f);
+            tamStack = leerTam(f);
+            tamConst = leerTam(f);
+            offsetEntryPoint = leerTam(f);
 
-                disassembler = ((argc >= 3) && (strcmp(argv[2],"-d") == 0));
-                if (disassembler)
-                    mostrarAssembler(tamCod);
-            }
-            else { // version == 2
-                inicializarVersion2(f,tamCod,tamData,tamExtra,tamStack,tamConst,tamParam,offsetEntryPoint);
-            }
+            inicializarVersion2(f,tamCod,tamData,tamExtra,tamStack,tamConst,tamParam, tamMemoria, offsetEntryPoint);
+
+            disassembler = ((argc >= 3) && (strcmp(argv[2],"-d") == 0)); // cambiar condición
+            if (disassembler)
+                mostrarAssembler(tamCod,2);            
+            
             procesa();
             return 0;
         }
     }
-    return 1;
 }

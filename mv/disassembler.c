@@ -154,7 +154,11 @@ void pasoDisassembler(unsigned int * dirInstr){
     *dirInstr = direccionInstruccion;
 }
 
-void mostrarAssembler(unsigned int tamCod){
+void mostrarAssembler(unsigned int tamCod,int version){ 
+    if (version == 2){
+        // agregar la muestra de strings
+        
+    }
     unsigned int direccionInstruccion = 0; // actualmente el comienzo del cs está en 0, esto se podría cambiar de ser necesario
     
     printf("\n \t\t Disassembler \n");
