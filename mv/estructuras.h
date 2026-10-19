@@ -10,8 +10,11 @@ typedef struct {
     int16_t base, tamaño; // 2 bytes cada elemento
 } Segmento;
 
+void inicializarMemoria();
+
+extern int tamMemoria;
 extern Segmento tablaSegm[CANT_SEGM];
-extern unsigned char memoria[];
+extern unsigned char *memoria;
 extern int registros[CANT_REGISTROS]; // 4 bytes cada registro
 
 #endif

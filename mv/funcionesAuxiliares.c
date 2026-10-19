@@ -83,7 +83,10 @@ void comprobarFalloSegmento(){
         printf("\nError: Fallo de Segmento \n");
         exit(1);
     }
-        
+}
+
+void comprobarMemoriaInsuficiente(){
+    
 }
 
 

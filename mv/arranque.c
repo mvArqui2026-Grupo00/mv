@@ -8,7 +8,8 @@
 #include "estructuras.h"
 #include "disassembler.h"
 
-
+int version, disassembler;
+unsigned short int tamCod, tamData, tamExtra, tamStack, tamConst, tamParam, offsetEntryPoint;
 
 unsigned short int leerTam(FILE *f){
     unsigned char byte1,byte2;
@@ -21,28 +22,8 @@ unsigned short int leerTam(FILE *f){
     return aux;
 }
 
-void inicializarVersion1(FILE *f,int tamCod){
-    inicializarMemoria(CANT_CELDAS);
-    inicializarSegm(tamCod,CANT_CELDAS-tamCod,0,0,0,0);
-    inicializarCodeSegment(tamCod,f); // pasamos el puntero a archivo apuntando al inicio del "code segment"
-    fclose(f);
 
-    registros[0] = 0x00000000;
-    inicializarPunteroFunciones(1);
-}
-
-void inicializarVersion2(FILE *f,unsigned int tamCod, unsigned int tamData, unsigned int tamExtra, unsigned int tamStack, unsigned int tamConst, unsigned int tamParam, unsigned int tamMemoria, unsigned int offsetEntryPoint){
-    inicializarMemoria(tamMemoria);
-    inicializarSegm(tamCod,tamData,tamExtra,tamStack,tamConst,tamParam);
-    inicializarCodeSegment(tamCod,f);
-    fclose(f);
-
-    registros[0] += offsetEntryPoint;
-    registros[7] = registros[29] + tablaSegm[devolverByte(registros[29],2)].tamaño; // sp inicializado en ss + SS.Tamaño (posición fuera del Stack Segment)
-    inicializarPunteroFunciones(2);
-}
-
-void inicializarCodeSegment(short int tamCod, FILE *f) { // se debe pasar el puntero f referenciando al comienzo del código
+void inicializarCodeSegment(FILE *f) { // se debe pasar el puntero f referenciando al comienzo del código
     unsigned char byte;
     registros[4] = registros[26];
     calcularPunteroFisico(1);
@@ -53,7 +34,7 @@ void inicializarCodeSegment(short int tamCod, FILE *f) { // se debe pasar el pun
     }
 }
 
-void inicializarConstSegment(short int tamConst,FILE *f) { // se debe pasar el puntero f referenciando al comienzo de las constantes
+void inicializarConstSegment(FILE *f) { // se debe pasar el puntero f referenciando al comienzo de las constantes
     unsigned char byte;
     registros[4] = registros[30]; // uso el KS
     calcularPunteroFisico(1);
@@ -65,7 +46,7 @@ void inicializarConstSegment(short int tamConst,FILE *f) { // se debe pasar el p
 }
 
 
-void inicializarSegm(unsigned int tamCod, unsigned int tamData, unsigned int tamExtra, unsigned int tamStack, unsigned int tamConst, unsigned int tamParam){
+void inicializarSegm(){
     int i = 0, y = -1; // i para recorrer el vec, y para recorrer la tablaSegm
     unsigned int vec[6] = {tamParam,tamConst,tamCod,tamData,tamExtra,tamStack}; // este orden es crucial
     int aux;
@@ -93,76 +74,151 @@ void inicializarSegm(unsigned int tamCod, unsigned int tamData, unsigned int tam
 
 }
 
+void inicializarVersion1(FILE *f){
+    tamMemoria = CANT_CELDAS;
+    inicializarMemoria();
+    tamData = CANT_CELDAS - tamCod;
+    tamExtra = tamStack = tamConst = tamParam = 0;
+    inicializarSegm();
+    inicializarCodeSegment(f); // pasamos el puntero a archivo apuntando al inicio del "code segment"
+    fclose(f);
 
+    registros[0] = 0x00000000;
+    inicializarPunteroFunciones(1);
+}
 
+void inicializarVersion2(FILE *f){
+    inicializarMemoria();
+    inicializarSegm();
+    inicializarCodeSegment(f);
+    fclose(f);
 
-
+    registros[0] += offsetEntryPoint;
+    registros[7] = registros[29] + tablaSegm[devolverByte(registros[29],2)].tamaño; // sp inicializado en ss + SS.Tamaño (posición fuera del Stack Segment)
+    inicializarPunteroFunciones(2);
+}
 
 
 
 int main(int argc, char *argv[]){
     // arg0 -> "vmx"
-    // arg1 -> "filename.vmx"
-    // arg2 -> "-d" (opcional)
+    // vmx [filename.vmx] [filename.vmi] [m=M] [-d] [-p param1 param2 ... paramN]
+
+    // para ejecutar correctamente la vmx, hay que pasar los argumentos en el orden ya establecido, se pueden omitir argumentos
+    // pero no cambiar el orden
+    // luego podríamos hacerlo más flexible esto, pero por ahora es así
 
     FILE *f;
-    char *archivoBin;
+    int indiceArg = 1; // para moverme por los argumentos de la ejecución de la mv
+    char paramVmx[] = ".vmx", paramVmi = ".vmi", paramMem = "m=", paramDis = "-d", paramParam = "-p";
+    char *archivoBin, *archivoImagen, *inicioExtension;
+
     char identif[6], identifLect[5], byteVersion;
     unsigned char byte1, byte2;
-    int version, disassembler;
-    unsigned short int tamCod,tamData,tamExtra,tamStack,tamConst,tamParam,offsetEntryPoint;
 
     printf("\n");
-    archivoBin = argv[1]; 
-    f = fopen(archivoBin,"rb");
 
-    if (f == NULL)
-        return 1;
-    else {
+    archivoBin = NULL;
+    inicioExtension = argv[indiceArg] + strlen(argv[indiceArg]) - 5; // bin = a.vmx\0 ; strlen -> 6; bin + 6 - 5 apunta a ".vmx\0"
+    if (strcmp(inicioExtension,paramVmx) == 0){
+        archivoBin = argv[indiceArg];
+        indiceArg++;
+    }
+    
+    archivoImagen = NULL;
+    if (indiceArg < argc){
+        inicioExtension = argv[indiceArg] + strlen(argv[indiceArg]) - 5;
+        if (strcmp(inicioExtension,paramVmi) == 0){
+            archivoImagen = argv[indiceArg];
+            indiceArg++;
+        }
+    }
 
-        fread(identifLect,1,5,f);
-        for (int i=0;i<5;i++)
-            identif[i] = identifLect[i];
-        identif[5] = '\0';
+    tamMemoria = CANT_CELDAS;
+    if (indiceArg < argc && strncmp(argv[indiceArg],paramMem,2) == 0){
+        // TODO -> COMPLETAR
+        tamMemoria = ;
+        indiceArg++;
+    }
 
-        if (strcmp(identif,"VMX26") != 0){
+    disassembler = 0;
+    if (indiceArg < argc && strcmp(argv[indiceArg],paramDis) == 0){
+        disassembler == 1;
+        indiceArg++;
+    }
+
+    tamParam = 0;
+    if (indiceArg < argc && strcmp(argv[indiceArg],paramParam) == 0){
+        // TODO -> completar
+        int indiceParam = 0;
+
+        // ....
+
+    }
+
+
+    if (archivoBin){
+    // esto es en caso de que haya un parametro .vmx
+        f = fopen(archivoBin,"rb");
+        if (f == NULL)
             return 1;
-        }
+        else {
 
-        fread(&byteVersion,1,1,f);
-        version = byteVersion;
-        
-        tamCod = leerTam(f);
+            fread(identifLect,1,5,f);
+            for (int i=0;i<5;i++)
+                identif[i] = identifLect[i];
+            identif[5] = '\0';
 
-        if (version == 1){
-            inicializarVersion1(f,tamCod);
+            if (strcmp(identif,"VMX26") != 0){
+                return 1;
+            }
 
-            disassembler = ((argc >= 3) && (strcmp(argv[2],"-d") == 0));
-            if (disassembler)
-                mostrarAssembler(tamCod,1);
-
-            procesa();
-            return 0;
-        }
-
-        if (version == 2){
-            // obtener tamMemoria
-            unsigned int tamMemoria;
-
-            tamData = leerTam(f);
-            tamExtra = leerTam(f);
-            tamStack = leerTam(f);
-            tamConst = leerTam(f);
-            offsetEntryPoint = leerTam(f);
-
-            inicializarVersion2(f,tamCod,tamData,tamExtra,tamStack,tamConst,tamParam, tamMemoria, offsetEntryPoint);
-
-            disassembler = ((argc >= 3) && (strcmp(argv[2],"-d") == 0)); // cambiar condición
-            if (disassembler)
-                mostrarAssembler(tamCod,2);            
+            fread(&byteVersion,1,1,f);
+            version = byteVersion;
             
-            procesa();
-            return 0;
+            tamCod = leerTam(f);
+
+            if (version == 1){
+                inicializarVersion1(f);
+
+                if (disassembler)
+                    mostrarAssembler(tamCod,1);
+
+                procesa();
+                return 0;
+            }
+
+            if (version == 2){
+
+                tamData = leerTam(f);
+                tamExtra = leerTam(f);
+                tamStack = leerTam(f);
+                tamConst = leerTam(f);
+                offsetEntryPoint = leerTam(f);
+
+                inicializarVersion2(f);
+
+                if (disassembler)
+                    mostrarAssembler(tamCod,2);            
+                
+                procesa();
+                return 0;
+            }
+        }
+    }
+
+    else { // no se pasó un .vmx como parámetro
+        if (archivoImagen == NULL)
+            return 1;
+        else {
+            f = fopen(archivoImagen,"rb");
+            if (f == NULL)
+                return 1;
+            else{
+                // TODO -> construir estado del vmx a partir del .vmi
+
+
+            }
         }
     }
 }
