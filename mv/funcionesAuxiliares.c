@@ -86,13 +86,16 @@ void comprobarFalloSegmento(){
 }
 
 void comprobarMemoriaInsuficiente(){
-    // usar segmentos
-    int sumaSegm = tamCode + tamData + tamConst + tamParam + tamExtra + tamStack;
+    // originalmente iba a sumar los tamaños de todos los segmentos, pero dado que el stack segment es el último
+    // y siempre se encuentra presente, puedo usar su base + su tamaño como reemplazo a la suma de tamaños de segmentos
+    int posStack = (registros[29] >> 16) & 0xFFFF; 
+    int sumaSegm = tablaSegm[posStack].base;
+    sumaSegm += tablaSegm[posStack].tamaño;
+
     if (sumaSegm > tamMemoria){
-        printf("Error: Memoria Insuficiente");
+        printf("Error: Memoria Insuficiente (%d > %d)\n",sumaSegm,tamMemoria);
         exit(1);
     }
-
 }
 
 void restaurarVmx(){

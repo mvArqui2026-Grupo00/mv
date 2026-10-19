@@ -170,30 +170,29 @@ int main(int argc, char *argv[]){
         }
     }
 
-    if (archivoBin){ // si no se carga un archivoBin no tomamos ningunos de los otros parámetros?
-
-        tamMemoria = CANT_CELDAS;
-        if (indiceArg < argc && strncmp(argv[indiceArg],paramMem,2) == 0){
-            char c;
-            int i;
-            for (i=0; i<strlen(argv[indiceArg]); i++){
-                if (c >= '0' && c<= '9')
-                    break;
-            }
-            int num = atoi(argv[indiceArg] + i);
-            // si atoi no lee correctamente devuelve 0; tenerlo en cuenta
-            // existe tmb strtol, pero me pareció más complicado
-
-            tamMemoria = num;
-            indiceArg++;
+    tamMemoria = CANT_CELDAS;
+    if (indiceArg < argc && strncmp(argv[indiceArg],paramMem,2) == 0){
+        char c;
+        int i;
+        for (i=0; i<strlen(argv[indiceArg]); i++){
+            if (c >= '0' && c<= '9')
+                break;
         }
+        int num = atoi(argv[indiceArg] + i);
+        // si atoi no lee correctamente devuelve 0; tenerlo en cuenta
+        // existe tmb strtol, pero me pareció más complicado
 
-        disassembler = 0;
-        if (indiceArg < argc && strcmp(argv[indiceArg],paramDis) == 0){
-            disassembler = 1;
-            indiceArg++;
-        }
+        tamMemoria = num;
+        indiceArg++;
+    }
 
+    disassembler = 0;
+    if (indiceArg < argc && strcmp(argv[indiceArg],paramDis) == 0){
+        disassembler = 1;
+        indiceArg++;
+    }
+
+    if (archivoBin){ // si no se carga un archivoBin no tomamos ningunos de los parámetros
         tamParam = 0;
         if (indiceArg < argc && strcmp(argv[indiceArg],paramParam) == 0){
             int indiceParam = 0;
