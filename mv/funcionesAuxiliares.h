@@ -10,6 +10,8 @@ void mostrarTablaSegm();
 
 // funciones auxiliares
 void comprobarFalloSegmento();
+void comprobarMemoriaInsuficiente();
+void escribirMemoriaArranque(int dirFisica,int valor);
 unsigned char devolverByte(unsigned int dato, int nroByte);
 
 int leerOperando(int operando);

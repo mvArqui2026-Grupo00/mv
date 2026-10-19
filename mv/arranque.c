@@ -8,7 +8,11 @@
 #include "estructuras.h"
 #include "disassembler.h"
 
-int version, disassembler;
+#define MAX_CAR_PARAM 50
+#define MAX_PARAM 25
+
+char parametros[MAX_PARAM][MAX_CAR_PARAM];
+int version, disassembler, cantParam, offsetVectorParam;
 unsigned short int tamCod, tamData, tamExtra, tamStack, tamConst, tamParam, offsetEntryPoint;
 
 unsigned short int leerTam(FILE *f){
@@ -45,6 +49,24 @@ void inicializarConstSegment(FILE *f) { // se debe pasar el puntero f referencia
     }
 }
 
+void inicializarParamSegment(){
+    int indiceCeldas = 0;
+    int punterosLogicos[cantParam];
+    
+    for (int i=0; i < cantParam; i++){
+        punterosLogicos[i] = indiceCeldas; // dado que los 2 primeros bytes siempre son 0, simplifico solo asignando offset
+        strcpy(memoria + indiceCeldas,parametros[i]);
+        indiceCeldas += strlen(parametros[i]);
+    }
+    offsetVectorParam = indiceCeldas;
+
+    for (int i=0; i < cantParam; i++){
+        escribirMemoriaArranque(indiceCeldas,punterosLogicos[i]);
+        indiceCeldas += 4;
+    }
+    
+    tamParam = indiceCeldas;
+}
 
 void inicializarSegm(){
     int i = 0, y = -1; // i para recorrer el vec, y para recorrer la tablaSegm
@@ -80,7 +102,7 @@ void inicializarVersion1(FILE *f){
     tamData = CANT_CELDAS - tamCod;
     tamExtra = tamStack = tamConst = tamParam = 0;
     inicializarSegm();
-    inicializarCodeSegment(f); // pasamos el puntero a archivo apuntando al inicio del "code segment"
+    inicializarCodeSegment(f);
     fclose(f);
 
     registros[0] = 0x00000000;
@@ -89,12 +111,26 @@ void inicializarVersion1(FILE *f){
 
 void inicializarVersion2(FILE *f){
     inicializarMemoria();
+    inicializarParamSegment();
     inicializarSegm();
     inicializarCodeSegment(f);
+    inicializarConstSegment(f);
     fclose(f);
 
     registros[0] += offsetEntryPoint;
+
+    int dirFisica = tamMemoria - 4;
+    escribirMemoriaArranque(dirFisica,offsetVectorParam); // *argv
+
+    dirFisica-=4;
+    escribirMemoriaArranque(dirFisica,cantParam); // argc
+
+    dirFisica-=4;
+    escribirMemoriaArranque(dirFisica,-1); // ret
+
     registros[7] = registros[29] + tablaSegm[devolverByte(registros[29],2)].tamaño; // sp inicializado en ss + SS.Tamaño (posición fuera del Stack Segment)
+    registros[7] -= 12;
+
     inicializarPunteroFunciones(2);
 }
 
@@ -110,7 +146,7 @@ int main(int argc, char *argv[]){
 
     FILE *f;
     int indiceArg = 1; // para moverme por los argumentos de la ejecución de la mv
-    char paramVmx[] = ".vmx", paramVmi = ".vmi", paramMem = "m=", paramDis = "-d", paramParam = "-p";
+    char *paramVmx = ".vmx", *paramVmi = ".vmi", *paramMem = "m=", *paramDis = "-d", *paramParam = "-p";
     char *archivoBin, *archivoImagen, *inicioExtension;
 
     char identif[6], identifLect[5], byteVersion;
@@ -134,28 +170,43 @@ int main(int argc, char *argv[]){
         }
     }
 
-    tamMemoria = CANT_CELDAS;
-    if (indiceArg < argc && strncmp(argv[indiceArg],paramMem,2) == 0){
-        // TODO -> COMPLETAR
-        tamMemoria = ;
-        indiceArg++;
+    if (archivoBin){ // si no se carga un archivoBin no tomamos ningunos de los otros parámetros?
+
+        tamMemoria = CANT_CELDAS;
+        if (indiceArg < argc && strncmp(argv[indiceArg],paramMem,2) == 0){
+            char c;
+            int i;
+            for (i=0; i<strlen(argv[indiceArg]); i++){
+                if (c >= '0' && c<= '9')
+                    break;
+            }
+            int num = atoi(argv[indiceArg] + i);
+            // si atoi no lee correctamente devuelve 0; tenerlo en cuenta
+            // existe tmb strtol, pero me pareció más complicado
+
+            tamMemoria = num;
+            indiceArg++;
+        }
+
+        disassembler = 0;
+        if (indiceArg < argc && strcmp(argv[indiceArg],paramDis) == 0){
+            disassembler = 1;
+            indiceArg++;
+        }
+
+        tamParam = 0;
+        if (indiceArg < argc && strcmp(argv[indiceArg],paramParam) == 0){
+            int indiceParam = 0;
+            strcpy(parametros[0],archivoBin);
+
+            indiceParam++;
+            while (indiceArg + indiceParam < argc)
+                strcpy(parametros[indiceParam],argv[indiceArg + indiceParam]);
+                indiceParam++;
+
+            cantParam = indiceParam;
+        }
     }
-
-    disassembler = 0;
-    if (indiceArg < argc && strcmp(argv[indiceArg],paramDis) == 0){
-        disassembler == 1;
-        indiceArg++;
-    }
-
-    tamParam = 0;
-    if (indiceArg < argc && strcmp(argv[indiceArg],paramParam) == 0){
-        // TODO -> completar
-        int indiceParam = 0;
-
-        // ....
-
-    }
-
 
     if (archivoBin){
     // esto es en caso de que haya un parametro .vmx
@@ -215,8 +266,8 @@ int main(int argc, char *argv[]){
             if (f == NULL)
                 return 1;
             else{
-                // TODO -> construir estado del vmx a partir del .vmi
 
+                // TODO -> construir estado del vmx a partir del .vmi
 
             }
         }

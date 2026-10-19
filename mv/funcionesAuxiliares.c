@@ -86,9 +86,14 @@ void comprobarFalloSegmento(){
 }
 
 void comprobarMemoriaInsuficiente(){
-    
+    // TODO -> implementar comprobación, o de no ser necesario modularizar escribirla donde se debe
 }
 
+void escribirMemoriaArranque(int dirFisica,int valor){ // función a usar en el módulo de arranque
+    for (int i=0;i<4;i++){
+        memoria[dirFisica+i] = devolverByte(valor, 3-i);
+    }
+}
 
 int leerOperando(int operando){
     int tipo = (devolverByte(operando,3));
