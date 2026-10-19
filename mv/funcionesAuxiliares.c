@@ -86,7 +86,21 @@ void comprobarFalloSegmento(){
 }
 
 void comprobarMemoriaInsuficiente(){
-    // TODO -> implementar comprobación, o de no ser necesario modularizar escribirla donde se debe
+    // usar segmentos
+    int sumaSegm = tamCode + tamData + tamConst + tamParam + tamExtra + tamStack;
+    if (sumaSegm > tamMemoria){
+        printf("Error: Memoria Insuficiente");
+        exit(1);
+    }
+
+}
+
+void restaurarVmx(){
+
+}
+
+void setearVmi(){
+
 }
 
 void escribirMemoriaArranque(int dirFisica,int valor){ // función a usar en el módulo de arranque

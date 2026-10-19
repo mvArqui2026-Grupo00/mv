@@ -12,6 +12,8 @@ void mostrarTablaSegm();
 void comprobarFalloSegmento();
 void comprobarMemoriaInsuficiente();
 void escribirMemoriaArranque(int dirFisica,int valor);
+void restaurarVmx();
+void setearVmi();
 unsigned char devolverByte(unsigned int dato, int nroByte);
 
 int leerOperando(int operando);
