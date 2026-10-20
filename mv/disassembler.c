@@ -154,7 +154,10 @@ void pasoDisassembler(unsigned int * dirInstr){
     *dirInstr = direccionInstruccion;
 }
 
-void mostrarAssembler(unsigned int tamCod,int version){ 
+void mostrarAssembler(int version){ 
+    unsigned int tamCod = tablaSegm[devolverByte(registros[26],3)].tamaño;
+
+
     if (version == 2){
         // agregar la muestra de strings
         

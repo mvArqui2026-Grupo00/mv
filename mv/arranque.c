@@ -85,7 +85,7 @@ void inicializarSegm(){
             aux = aux << 16;
             registros[26+i] = aux;
         }
-        else{
+           else{
             registros[26+i] = -1;
         }
     }
@@ -234,7 +234,7 @@ int main(int argc, char *argv[]){
                 inicializarVersion1(f);
 
                 if (disassembler)
-                    mostrarAssembler(tamCod,1);
+                    mostrarAssembler(1);
 
                 procesa();
                 return 0;
@@ -251,7 +251,7 @@ int main(int argc, char *argv[]){
                 inicializarVersion2(f);
 
                 if (disassembler)
-                    mostrarAssembler(tamCod,2);            
+                    mostrarAssembler(2);            
                 
                 procesa();
                 return 0;
@@ -267,9 +267,13 @@ int main(int argc, char *argv[]){
             if (f == NULL)
                 return 1;
             else{
+                restaurarVmx();
 
-                // TODO -> construir estado del vmx a partir del .vmi
+                if (disassembler)
+                    mostrarAssembler(2);
 
+                procesa();
+                return 0;
             }
         }
     }
