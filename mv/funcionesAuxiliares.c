@@ -4,6 +4,7 @@
 #include "funcionesAuxiliares.h"
 #include "estructuras.h"
 
+char *archivoImagen; 
 
 void imprimirHexa(unsigned int dato, int cantBytes){
     printf("0x");
@@ -98,12 +99,102 @@ void comprobarMemoriaInsuficiente(){
     }
 }
 
-void restaurarVmx(){
+void configurarStringBigEndian(char *cadena, unsigned int valor,int n){
+    for (int i=0; i<n; i++)
+        cadena[i] = (valor >> 8 * (n-1 -i)) & 0xFF;
+}
 
+int leerNumBigEndian(char *cadena, int n){
+    unsigned int num = 0;
+    for (int i=0; i<n; i++)
+        num |= cadena[i] << 8 * (n-1 -i);
+    return num;
+}
+
+void restaurarVmx(){
+    FILE *f = fopen(archivoImagen,"wb");
+    if (f == NULL){
+        printf("Error al abrir archivo imagen\n");
+        exit(1);
+    }
+    else{
+        char id[6], version, stringTamMemoria[2];
+        fread(id,6,1,archivoImagen);
+        fread(&version,1,1,archivoImagen);
+        fread(&stringTamMemoria,2,1,archivoImagen);
+
+        if (strcmp(id,"VMX26") == 0 && version == 1){
+            tamMemoria = leerNumBigEndian(stringTamMemoria,2);
+
+            // restauro registros
+            char strReg[4];
+            for (int i=0; i<CANT_REGISTROS;i++){
+                fread(strReg,4,1,archivoImagen);
+                registros[i] = leerNumBigEndian(strReg,4);
+            }
+
+            // restauro tablaSegm
+            char strSegm[4];
+            for (int i=0; i<CANT_SEGM;i++){
+                fread(strSegm,4,1,archivoImagen);
+                tablaSegm[i].base = leerNumBigEndian(strSegm,2);
+                tablaSegm[i].tamaño = leerNumBigEndian(strSegm+2,2);
+            }
+
+            // restauro memoria
+            char *charByte;
+            for (int i=0; i<tamMemoria;i++){
+                fread(charByte,1,1,archivoImagen);
+                memoria[i] = *charByte;
+            }       
+
+        }
+        else{
+            printf("Error, formato de archivo imagen válido\n");
+            exit(1);
+        }
+        fclose(f);
+    }
 }
 
 void setearVmi(){
+    FILE *f = fopen(archivoImagen,"wb");
+    if (f == NULL){
+        printf("Error al crear archivo imagen\n");
+        exit(1);
+    }
+    else{
+        char id[6] = "VMX26", version = 1, stringTamMemoria[2];
+        fwrite(id,len(id),1,archivoImagen);
+        fwrite(&version,1,1,archivoImagen);
 
+        configurarStringBigEndian(stringTamMemoria, tamMemoria,2);
+        fwrite(stringTamMemoria,2,1,archivoImagen);
+
+
+        // copio registros
+        char strReg[4];
+        for (int i=0; i<CANT_REGISTROS;i++){
+            configurarStringBigEndian(strReg,registros[i],4);
+            fwrite(strReg,4,1,archivoImagen);
+        }
+
+        // copio segmentos
+        char strSegm[4];
+        for (int i=0; i<CANT_SEGM;i++){
+            configurarStringBigEndian(strSegm,tablaSegm[i].base,2);
+            configurarStringBigEndian(strSegm+2,tablaSegm[i].tamaño,2);
+            fwrite(strSegm,4,1,archivoImagen);
+        }
+
+        // copio memoria
+        char *charByte;
+        for (int i=0; i<tamMemoria;i++){
+            charByte = memoria + i;
+            fwrite(charByte,1,1,archivoImagen);
+        }
+        fclose(f);
+    }
 }
 
 void escribirMemoriaArranque(int dirFisica,int valor){ // función a usar en el módulo de arranque

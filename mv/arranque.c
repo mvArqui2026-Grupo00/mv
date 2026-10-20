@@ -147,7 +147,7 @@ int main(int argc, char *argv[]){
     FILE *f;
     int indiceArg = 1; // para moverme por los argumentos de la ejecución de la mv
     char *paramVmx = ".vmx", *paramVmi = ".vmi", *paramMem = "m=", *paramDis = "-d", *paramParam = "-p";
-    char *archivoBin, *archivoImagen, *inicioExtension;
+    char *archivoBin, *inicioExtension; // *archivoImagen -> lo pasé a funciones auxiliares, para poder usarlo como variable global en dicho módulo
 
     char identif[6], identifLect[5], byteVersion;
     unsigned char byte1, byte2;
@@ -157,7 +157,7 @@ int main(int argc, char *argv[]){
     archivoBin = NULL;
     inicioExtension = argv[indiceArg] + strlen(argv[indiceArg]) - 5; // bin = a.vmx\0 ; strlen -> 6; bin + 6 - 5 apunta a ".vmx\0"
     if (strcmp(inicioExtension,paramVmx) == 0){
-        archivoBin = argv[indiceArg];
+        strcpy(archivoBin,argv[indiceArg]);
         indiceArg++;
     }
     
@@ -165,7 +165,7 @@ int main(int argc, char *argv[]){
     if (indiceArg < argc){
         inicioExtension = argv[indiceArg] + strlen(argv[indiceArg]) - 5;
         if (strcmp(inicioExtension,paramVmi) == 0){
-            archivoImagen = argv[indiceArg];
+            strcpy(archivoImagen,argv[indiceArg]);
             indiceArg++;
         }
     }
@@ -207,6 +207,8 @@ int main(int argc, char *argv[]){
         }
     }
 
+
+    
     if (archivoBin){
     // esto es en caso de que haya un parametro .vmx
         f = fopen(archivoBin,"rb");

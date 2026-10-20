@@ -10,7 +10,7 @@ void inicializarMemoria(){ // expresado en KiB (ejemplo: 10KiB -> 10240 bytes)
     }
 }
 
-int tamMemoria;
+short int tamMemoria;
 Segmento tablaSegm[CANT_SEGM];
 unsigned char *memoria;
 int registros[CANT_REGISTROS]; // 4 bytes cada registro
