@@ -55,7 +55,7 @@ void mostrarTablaSegm(){
         printf("Segmento[%d]: ",i);
         printf("Base: ");
         imprimirHexa(tablaSegm[i].base,2);
-        printf("Tamaño: ");
+        printf("Tamanio: "); // windows no detecta la ñ ):
         imprimirHexa(tablaSegm[i].tamaño,2);
         printf("\n");
     }
