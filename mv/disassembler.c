@@ -106,7 +106,7 @@ void pasoConstDisassembler(unsigned int * dirInstr){
     char cadena[1024]; // no sé si hacerlo fijo y arriesgarme a quedarme corto, o hacerlo dinámico y complicarme más
     int longitudCadena = 0;
 
-    printf("[%04X] ",direccionInstruccion);
+    printf(" [%04X] ",direccionInstruccion);
 
     do{
         c = memoria[direccionInstruccion + longitudCadena];
@@ -216,7 +216,7 @@ void mostrarAssembler(int version, int offsetEntryPoint){
     while(direccionInstruccion < limCod){
         if (direccionInstruccion == dirEntryPoint)
             printf(">");
-        pasoDisassembler(&direccionInstruccion);
+        pasoCodeDisassembler(&direccionInstruccion);
         // pasarle el entrypoint
     }
     
