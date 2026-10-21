@@ -79,14 +79,38 @@ void inicializarSegm(){
             if (y == 0)
                 tablaSegm[y].base = 0;
             else
-                tablaSegm[y].base = tablaSegm[y-1].base;
+                tablaSegm[y].base = tablaSegm[y-1].base + tablaSegm[y-1].tamaño;
             tablaSegm[y].tamaño = vec[i];
             aux = y;
             aux = aux << 16;
-            registros[26+i] = aux;
+
+            if (i == 0)
+                registros[31] = aux;
+            else if(i == 1)
+                registros[30] = aux;
+            else if(i == 2)
+                registros[26] = aux;
+            else if(i == 3)
+                registros[27] = aux;
+            else if(i == 4)
+                registros[28] = aux;
+            else if(i == 5)
+                registros[29] = aux;
+            
         }
-           else{
-            registros[26+i] = -1;
+        else{
+            if (i == 0)
+                registros[31] = -1;
+            else if(i == 1)
+                registros[30] = -1;
+            else if(i == 2)
+                registros[26] = -1;
+            else if(i == 3)
+                registros[27] = -1;
+            else if(i == 4)
+                registros[28] = -1;
+            else if(i == 5)
+                registros[29] = -1;
         }
     }
     for (y++;y<CANT_SEGM;y++){
@@ -94,6 +118,12 @@ void inicializarSegm(){
         tablaSegm[y].tamaño = -1;
     }
 
+//    26 -> CS (Puntero al inicio del Code Segment)
+//    27 -> DS (Puntero al inicio del Data Segment)
+//    28 -> ES (Puntero al inicio del Extra Segment)
+//    29 -> SS (Puntero al inicio del Stack Segment)
+//    30 -> KS (Puntero al inicio del Const Segment)
+//    31 -> PS (Puntero al inicio del Param Segment)
 }
 
 void inicializarVersion1(FILE *f){
@@ -111,25 +141,33 @@ void inicializarVersion1(FILE *f){
 
 void inicializarVersion2(FILE *f){
     inicializarMemoria();
-    inicializarParamSegment();
+    if (cantParam > 0)
+        inicializarParamSegment();
     inicializarSegm();
+    comprobarMemoriaInsuficiente();
     inicializarCodeSegment(f);
     inicializarConstSegment(f);
     fclose(f);
 
+    registros[0] = registros[26];
     registros[0] += offsetEntryPoint;
 
-    int dirFisica = tamMemoria - 4;
-    escribirMemoriaArranque(dirFisica,offsetVectorParam); // *argv
-
-    dirFisica-=4;
-    escribirMemoriaArranque(dirFisica,cantParam); // argc
-
-    dirFisica-=4;
-    escribirMemoriaArranque(dirFisica,-1); // ret
-
     registros[7] = registros[29] + tablaSegm[devolverByte(registros[29],2)].tamaño; // sp inicializado en ss + SS.Tamaño (posición fuera del Stack Segment)
-    registros[7] -= 12;
+    if (cantParam > 0){
+        int dirFisica = tablaSegm[devolverByte(registros[29],2)].base;
+        dirFisica += tablaSegm[devolverByte(registros[29],2)].tamaño;
+        dirFisica -= 4;
+
+        escribirMemoriaArranque(dirFisica,offsetVectorParam); // *argv
+
+        dirFisica-=4;
+        escribirMemoriaArranque(dirFisica,cantParam); // argc
+
+        dirFisica-=4;
+        escribirMemoriaArranque(dirFisica,-1); // ret
+
+        registros[7] -= 12;
+    }
 
     inicializarPunteroFunciones(2);
 }
@@ -154,28 +192,31 @@ int main(int argc, char *argv[]){
 
     printf("\n");
 
-    archivoBin = NULL;
-    inicioExtension = argv[indiceArg] + strlen(argv[indiceArg]) - 5; // bin = a.vmx\0 ; strlen -> 6; bin + 6 - 5 apunta a ".vmx\0"
+    inicioExtension = argv[indiceArg] + strlen(argv[indiceArg]) - 4; // bin = a.vmx\0 ; strlen -> 5; bin + 5 - 4 apunta a ".vmx\0" (strlen no considera \0)
     if (strcmp(inicioExtension,paramVmx) == 0){
         strcpy(archivoBin,argv[indiceArg]);
         indiceArg++;
     }
+    else
+        archivoBin = NULL;
     
-    archivoImagen = NULL;
     if (indiceArg < argc){
-        inicioExtension = argv[indiceArg] + strlen(argv[indiceArg]) - 5;
+        inicioExtension = argv[indiceArg] + strlen(argv[indiceArg]) - 4;
         if (strcmp(inicioExtension,paramVmi) == 0){
             strcpy(archivoImagen,argv[indiceArg]);
             indiceArg++;
         }
     }
+    else
+        archivoImagen = NULL;
 
     tamMemoria = CANT_CELDAS;
     if (indiceArg < argc && strncmp(argv[indiceArg],paramMem,2) == 0){
         char c;
         int i;
         for (i=0; i<strlen(argv[indiceArg]); i++){
-            if (c >= '0' && c<= '9')
+            c = argv[indiceArg][i];
+            if (c >= '0' && c <= '9') // me muevo hasta encontrar el primer dígito
                 break;
         }
         int num = atoi(argv[indiceArg] + i);
@@ -193,7 +234,7 @@ int main(int argc, char *argv[]){
     }
 
     if (archivoBin){ // si no se carga un archivoBin no tomamos ningunos de los parámetros
-        tamParam = 0;
+        tamParam = cantParam = 0;
         if (indiceArg < argc && strcmp(argv[indiceArg],paramParam) == 0){
             int indiceParam = 0;
             strcpy(parametros[0],archivoBin);
@@ -210,7 +251,7 @@ int main(int argc, char *argv[]){
 
     
     if (archivoBin){
-    // esto es en caso de que haya un parametro .vmx
+        // esto es en caso de que haya un parametro .vmx
         f = fopen(archivoBin,"rb");
         if (f == NULL)
             return 1;
@@ -249,11 +290,12 @@ int main(int argc, char *argv[]){
                 offsetEntryPoint = leerTam(f);
 
                 inicializarVersion2(f);
-
+ 
                 if (disassembler)
                     mostrarAssembler(2,offsetEntryPoint);            
-                
+ 
                 procesa();
+ 
                 return 0;
             }
         }

@@ -19,10 +19,10 @@ char mnemonicos[32][5] = {
     "JNZ",
     "NOT",
 
-    "NDef",
-    "NDef",
-    "NDef",
-    "NDef",
+    "PUSH",
+    "POP",
+    "CALL",
+    "RET",
 
     "STOP",
     "MOV",
@@ -52,8 +52,8 @@ char reg[32][5] = {
     "MAR",
     "MBR",
 
-    "RgND",
-    "RgND",
+    "SP",
+    "BP",
     "RgND",
 
     "EAX",
@@ -64,6 +64,7 @@ char reg[32][5] = {
     "EFX",
     "AC",
     "CC",
+
     "RgND",
     "RgND",
     "RgND",
@@ -75,11 +76,10 @@ char reg[32][5] = {
 
     "CS",
     "DS",
-    
-    "RgND",
-    "RgND",
-    "RgND",
-    "RgND",
+    "ES",
+    "SS",
+    "KS",
+    "PS",
 };
 
 void mostrarOperando(unsigned int tipo, int operando){
@@ -124,13 +124,13 @@ void pasoConstDisassembler(unsigned int * dirInstr){
             printf("%02X ",memoria[direccionInstruccion+i]);
         printf("..\t| ");
     }
-        printf("\"");
-        for (int i=0;i<longitudCadena;i++)
-            if (cadena[i] >= 32 && cadena[i] <= 126)
-                printf("%c",cadena[i]);
-            else
-                printf(".");
-        printf("\"\n");
+    printf("\"");
+    for (int i=0; i < longitudCadena-1; i++) // el -1 es para no contar el \0
+        if (cadena[i] >= 32 && cadena[i] <= 126)
+            printf("%c",cadena[i]);
+        else
+            printf(".");
+    printf("\"");
 
     direccionInstruccion += longitudCadena;
     printf("\n");
@@ -206,12 +206,13 @@ void mostrarAssembler(int version, int offsetEntryPoint){
         while (direccionInstruccion < limConst){
             pasoConstDisassembler(&direccionInstruccion);
         }
+        printf("\n");
     }
     
-    direccionInstruccion = tablaSegm[devolverByte(registros[26],3)].base;
-    int limCod = direccionInstruccion + tablaSegm[devolverByte(registros[26],3)].tamaño;
+    direccionInstruccion = tablaSegm[devolverByte(registros[26],2)].base;
+    int limCod = direccionInstruccion + tablaSegm[devolverByte(registros[26],2)].tamaño;
 
-    int dirEntryPoint = tablaSegm[devolverByte(registros[26],3)].base + offsetEntryPoint;
+    int dirEntryPoint = direccionInstruccion + offsetEntryPoint;
 
     while(direccionInstruccion < limCod){
         if (direccionInstruccion == dirEntryPoint)
