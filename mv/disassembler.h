@@ -2,8 +2,9 @@
 #define DISASSEMBLER_H
 
 void mostrarOperando(unsigned int dato, int nroByte);
-void pasoDisassembler(unsigned int * dirInstr);
-void mostrarAssembler(unsigned int tamCod);
+void pasoCodeDisassembler(unsigned int * dirInstr);
+void pasoConstDisassembler(unsigned int * dirInstr);
+void mostrarAssembler(int version,int offsetEntryPoint);
 
 extern char mnemonicos[32][5];
 extern char reg[32][5];

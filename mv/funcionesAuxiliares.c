@@ -1,9 +1,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <string.h>
 #include "funcionesAuxiliares.h"
 #include "estructuras.h"
 
+char *archivoImagen; 
 
 void imprimirHexa(unsigned int dato, int cantBytes){
     printf("0x");
@@ -53,7 +55,7 @@ void mostrarTablaSegm(){
         printf("Segmento[%d]: ",i);
         printf("Base: ");
         imprimirHexa(tablaSegm[i].base,2);
-        printf("Tamaño: ");
+        printf("Tamanio: "); // windows no detecta la ñ ):
         imprimirHexa(tablaSegm[i].tamaño,2);
         printf("\n");
     }
@@ -63,8 +65,7 @@ void mostrarTablaSegm(){
 
 //  FUNCIONES AUXILIARES
 
-unsigned char devolverByte(unsigned int dato, int nroByte){ // que nombre le ponemos a los parámetros
-    // el nro byte es el byte a devolver, siendo 0 el byte de menor significado, 1: el segundo de menor significado, ....
+unsigned char devolverByte(unsigned int dato, int nroByte){ // el nro byte es el byte a devolver, siendo 0 el byte de menor significado, 1: el segundo de menor significado, ....
     dato = dato >> (8 * nroByte);
     dato &= 0xFF;
     unsigned char aux = dato;
@@ -84,9 +85,124 @@ void comprobarFalloSegmento(){
         printf("\nError: Fallo de Segmento \n");
         exit(1);
     }
-        
 }
 
+void comprobarMemoriaInsuficiente(){
+    // originalmente iba a sumar los tamaños de todos los segmentos, pero dado que el stack segment es el último
+    // y siempre se encuentra presente, puedo usar su base + su tamaño como reemplazo a la suma de tamaños de segmentos
+    int posStack = (registros[29] >> 16) & 0xFFFF; 
+    int sumaSegm = tablaSegm[posStack].base;
+    sumaSegm += tablaSegm[posStack].tamaño;
+
+    if (sumaSegm > tamMemoria){
+        printf("Error: Memoria Insuficiente (%d > %d)\n",sumaSegm,tamMemoria);
+        exit(1);
+    }
+}
+
+void configurarStringBigEndian(char *cadena, unsigned int valor,int n){
+    for (int i=0; i<n; i++)
+        cadena[i] = (valor >> 8 * (n-1 -i)) & 0xFF;
+}
+
+int leerNumBigEndian(char *cadena, int n){
+    unsigned int num = 0;
+    for (int i=0; i<n; i++)
+        num |= cadena[i] << 8 * (n-1 -i);
+    return num;
+}
+
+void restaurarVmx(){
+    FILE *f = fopen(archivoImagen,"wb");
+    if (f == NULL){
+        printf("Error al abrir archivo imagen\n");
+        exit(1);
+    }
+    else{
+        char id[6], version, stringTamMemoria[2];
+        fread(id,6,1,f);
+        fread(&version,1,1,f);
+        fread(&stringTamMemoria,2,1,f);
+
+        if (strcmp(id,"VMX26") == 0 && version == 1){
+            tamMemoria = leerNumBigEndian(stringTamMemoria,2);
+
+            // restauro registros
+            char strReg[4];
+            for (int i=0; i<CANT_REGISTROS;i++){
+                fread(strReg,4,1,f);
+                registros[i] = leerNumBigEndian(strReg,4);
+            }
+
+            // restauro tablaSegm
+            char strSegm[4];
+            for (int i=0; i<CANT_SEGM;i++){
+                fread(strSegm,4,1,f);
+                tablaSegm[i].base = leerNumBigEndian(strSegm,2);
+                tablaSegm[i].tamaño = leerNumBigEndian(strSegm+2,2);
+            }
+
+            // restauro memoria
+            char *charByte;
+            for (int i=0; i<tamMemoria;i++){
+                fread(charByte,1,1,f);
+                memoria[i] = *charByte;
+            }       
+
+        }
+        else{
+            printf("Error, formato de archivo imagen válido\n");
+            exit(1);
+        }
+        fclose(f);
+    }
+}
+
+void setearVmi(){
+    FILE *f = fopen(archivoImagen,"wb");
+    if (f == NULL){
+        printf("Error al crear archivo imagen\n");
+        exit(1);
+    }
+    else{
+        char id[6] = "VMX26", version = 1, stringTamMemoria[2];
+        fwrite(id,strlen(id),1,f);
+        fwrite(&version,1,1,f);
+
+        configurarStringBigEndian(stringTamMemoria, tamMemoria,2);
+        fwrite(stringTamMemoria,2,1,f);
+
+
+        // copio registros
+        char strReg[4];
+        for (int i=0; i<CANT_REGISTROS;i++){
+            configurarStringBigEndian(strReg,registros[i],4);
+            fwrite(strReg,4,1,f);
+        }
+
+        // copio segmentos
+        char strSegm[4];
+        for (int i=0; i<CANT_SEGM;i++){
+            configurarStringBigEndian(strSegm,tablaSegm[i].base,2);
+            configurarStringBigEndian(strSegm+2,tablaSegm[i].tamaño,2);
+            fwrite(strSegm,4,1,f);
+        }
+
+        // copio memoria
+        char *charByte;
+        for (int i=0; i<tamMemoria;i++){
+            charByte = memoria + i;
+            fwrite(charByte,1,1,f);
+        }
+        fclose(f);
+    }
+}
+
+void escribirMemoriaArranque(int dirFisica,int valor){ // función a usar en el módulo de arranque
+    for (int i=0;i<4;i++){
+        memoria[dirFisica+i] = devolverByte(valor, 3-i);
+    }
+}
 
 int leerOperando(int operando){
     int tipo = (devolverByte(operando,3));

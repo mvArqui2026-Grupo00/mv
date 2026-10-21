@@ -3,6 +3,8 @@
 #include "estructuras.h"
 #include "funcionesAuxiliares.h"
 
+// MAURO -> AGREGAR -> MOSTRAR STRINS DEL KS AL PRINCIPIO, ANTES DE MOSTRAR EL RESTO
+// MAURO -> AGREGAR -> MOSTRAR MODIFICADORES DE OPERANDOS REGISTROS Y MEMORIA 
 
 char mnemonicos[32][5] = {
     "SYS",
@@ -17,10 +19,10 @@ char mnemonicos[32][5] = {
     "JNZ",
     "NOT",
 
-    "NDef",
-    "NDef",
-    "NDef",
-    "NDef",
+    "PUSH",
+    "POP",
+    "CALL",
+    "RET",
 
     "STOP",
     "MOV",
@@ -50,8 +52,8 @@ char reg[32][5] = {
     "MAR",
     "MBR",
 
-    "RgND",
-    "RgND",
+    "SP",
+    "BP",
     "RgND",
 
     "EAX",
@@ -62,6 +64,7 @@ char reg[32][5] = {
     "EFX",
     "AC",
     "CC",
+
     "RgND",
     "RgND",
     "RgND",
@@ -73,11 +76,10 @@ char reg[32][5] = {
 
     "CS",
     "DS",
-    
-    "RgND",
-    "RgND",
-    "RgND",
-    "RgND",
+    "ES",
+    "SS",
+    "KS",
+    "PS",
 };
 
 void mostrarOperando(unsigned int tipo, int operando){
@@ -98,12 +100,49 @@ void mostrarOperando(unsigned int tipo, int operando){
     }
 }
 
-void pasoDisassembler(unsigned int * dirInstr){
+void pasoConstDisassembler(unsigned int * dirInstr){
+    unsigned int direccionInstruccion = * dirInstr;
+    char c;
+    char cadena[1024]; // no sé si hacerlo fijo y arriesgarme a quedarme corto, o hacerlo dinámico y complicarme más
+    int longitudCadena = 0;
+
+    printf(" [%04X] ",direccionInstruccion);
+
+    do{
+        c = memoria[direccionInstruccion + longitudCadena];
+        cadena[longitudCadena] = c;
+        longitudCadena++;
+    } while (c != '\0');
+
+    if (longitudCadena <= 7){
+        for (int i=0; i< longitudCadena; i++)
+            printf("%02X ",memoria[direccionInstruccion+i]);
+        printf("\t| ");
+    }
+    else {
+        for (int i=0;i<6;i++)
+            printf("%02X ",memoria[direccionInstruccion+i]);
+        printf("..\t| ");
+    }
+    printf("\"");
+    for (int i=0; i < longitudCadena-1; i++) // el -1 es para no contar el \0
+        if (cadena[i] >= 32 && cadena[i] <= 126)
+            printf("%c",cadena[i]);
+        else
+            printf(".");
+    printf("\"");
+
+    direccionInstruccion += longitudCadena;
+    printf("\n");
+    *dirInstr = direccionInstruccion;
+}
+
+void pasoCodeDisassembler(unsigned int * dirInstr){
     unsigned int direccionInstruccion = * dirInstr;
     int n1, n2, instr, opc, op1, op2;
     
     instr = memoria[direccionInstruccion];
-    printf("[%04X] ",direccionInstruccion);
+    printf(" [%04X] ",direccionInstruccion);
     printf("%02X ",instr);
     direccionInstruccion++;
     
@@ -153,13 +192,34 @@ void pasoDisassembler(unsigned int * dirInstr){
     *dirInstr = direccionInstruccion;
 }
 
-void mostrarAssembler(unsigned int tamCod){
-    unsigned int direccionInstruccion = 0; // actualmente el comienzo del cs está en 0, esto se podría cambiar de ser necesario
-    
+void mostrarAssembler(int version, int offsetEntryPoint){ 
+    int tamCod = tablaSegm[devolverByte(registros[26],3)].tamaño;
+    int direccionInstruccion;
+
     printf("\n \t\t Disassembler \n");
     printf(" -------- -------- -------- --------\n\n");
-    while(direccionInstruccion < tamCod){
-        pasoDisassembler(&direccionInstruccion);
+
+    if (version == 2){
+        direccionInstruccion = tablaSegm[devolverByte(registros[30],3)].base;
+        int limConst = direccionInstruccion + tablaSegm[devolverByte(registros[30],3)].tamaño;
+
+        while (direccionInstruccion < limConst){
+            pasoConstDisassembler(&direccionInstruccion);
+        }
+        printf("\n");
     }
+    
+    direccionInstruccion = tablaSegm[devolverByte(registros[26],2)].base;
+    int limCod = direccionInstruccion + tablaSegm[devolverByte(registros[26],2)].tamaño;
+
+    int dirEntryPoint = direccionInstruccion + offsetEntryPoint;
+
+    while(direccionInstruccion < limCod){
+        if (direccionInstruccion == dirEntryPoint)
+            printf(">");
+        pasoCodeDisassembler(&direccionInstruccion);
+        // pasarle el entrypoint
+    }
+    
     printf("\n -------- -------- -------- --------\n\n");
 }
