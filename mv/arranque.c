@@ -234,7 +234,7 @@ int main(int argc, char *argv[]){
                 inicializarVersion1(f);
 
                 if (disassembler)
-                    mostrarAssembler(1);
+                    mostrarAssembler(1,-1);
 
                 procesa();
                 return 0;
@@ -251,7 +251,7 @@ int main(int argc, char *argv[]){
                 inicializarVersion2(f);
 
                 if (disassembler)
-                    mostrarAssembler(2);            
+                    mostrarAssembler(2,offsetEntryPoint);            
                 
                 procesa();
                 return 0;
@@ -270,7 +270,7 @@ int main(int argc, char *argv[]){
                 restaurarVmx();
 
                 if (disassembler)
-                    mostrarAssembler(2);
+                    mostrarAssembler(2,offsetEntryPoint);
 
                 procesa();
                 return 0;

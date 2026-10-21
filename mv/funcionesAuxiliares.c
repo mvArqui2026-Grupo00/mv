@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <string.h>
 #include "funcionesAuxiliares.h"
 #include "estructuras.h"
 
@@ -119,9 +120,9 @@ void restaurarVmx(){
     }
     else{
         char id[6], version, stringTamMemoria[2];
-        fread(id,6,1,archivoImagen);
-        fread(&version,1,1,archivoImagen);
-        fread(&stringTamMemoria,2,1,archivoImagen);
+        fread(id,6,1,f);
+        fread(&version,1,1,f);
+        fread(&stringTamMemoria,2,1,f);
 
         if (strcmp(id,"VMX26") == 0 && version == 1){
             tamMemoria = leerNumBigEndian(stringTamMemoria,2);
@@ -129,14 +130,14 @@ void restaurarVmx(){
             // restauro registros
             char strReg[4];
             for (int i=0; i<CANT_REGISTROS;i++){
-                fread(strReg,4,1,archivoImagen);
+                fread(strReg,4,1,f);
                 registros[i] = leerNumBigEndian(strReg,4);
             }
 
             // restauro tablaSegm
             char strSegm[4];
             for (int i=0; i<CANT_SEGM;i++){
-                fread(strSegm,4,1,archivoImagen);
+                fread(strSegm,4,1,f);
                 tablaSegm[i].base = leerNumBigEndian(strSegm,2);
                 tablaSegm[i].tamaño = leerNumBigEndian(strSegm+2,2);
             }
@@ -144,7 +145,7 @@ void restaurarVmx(){
             // restauro memoria
             char *charByte;
             for (int i=0; i<tamMemoria;i++){
-                fread(charByte,1,1,archivoImagen);
+                fread(charByte,1,1,f);
                 memoria[i] = *charByte;
             }       
 
@@ -165,18 +166,18 @@ void setearVmi(){
     }
     else{
         char id[6] = "VMX26", version = 1, stringTamMemoria[2];
-        fwrite(id,len(id),1,archivoImagen);
-        fwrite(&version,1,1,archivoImagen);
+        fwrite(id,strlen(id),1,f);
+        fwrite(&version,1,1,f);
 
         configurarStringBigEndian(stringTamMemoria, tamMemoria,2);
-        fwrite(stringTamMemoria,2,1,archivoImagen);
+        fwrite(stringTamMemoria,2,1,f);
 
 
         // copio registros
         char strReg[4];
         for (int i=0; i<CANT_REGISTROS;i++){
             configurarStringBigEndian(strReg,registros[i],4);
-            fwrite(strReg,4,1,archivoImagen);
+            fwrite(strReg,4,1,f);
         }
 
         // copio segmentos
@@ -184,14 +185,14 @@ void setearVmi(){
         for (int i=0; i<CANT_SEGM;i++){
             configurarStringBigEndian(strSegm,tablaSegm[i].base,2);
             configurarStringBigEndian(strSegm+2,tablaSegm[i].tamaño,2);
-            fwrite(strSegm,4,1,archivoImagen);
+            fwrite(strSegm,4,1,f);
         }
 
         // copio memoria
         char *charByte;
         for (int i=0; i<tamMemoria;i++){
             charByte = memoria + i;
-            fwrite(charByte,1,1,archivoImagen);
+            fwrite(charByte,1,1,f);
         }
         fclose(f);
     }
