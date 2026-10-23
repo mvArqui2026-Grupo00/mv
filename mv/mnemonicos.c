@@ -165,6 +165,82 @@ void sysWrite(){
     }
 }
 
+void clearScreen(){
+    printf("\033[2J\033[H");
+    // \033 : es el caracter ESC
+    // [ : es el aviso de que viene una secuencia de control con parámetros.
+    // 2J : es el parametro de la orden, que indica que borre toda la pantalla
+    // \033[H : Otra vez escape y que lleve el cursor a la posicion inicial
+}
+
+void breakPoint(){
+    if (hayImagen){
+        generarImagen();
+
+        char linea[10];
+        fgets(linea, sizeof(linea), stdin);
+
+        switch(linea[0]){
+            case 'g': pasoAPaso = 0;
+                break;
+            case 'q':
+                exit(0);
+            case '\n': pasoAPaso = 1;
+                break;
+        }
+    }
+}
+
+void stringWrite(){
+    int direccionLogica = registros[13]; // EDX: dirección lógica del string
+    int caracter;
+
+    registros[4] = direccionLogica;      // LAR
+    comprobarFalloSegmento();
+    calcularPunteroFisico(1);            // MAR, 1 byte (tamaño de caracter)
+    leerDeMemoria();
+    caracter = registros[6];             // MBR
+
+    while (caracter != 0){               // hasta encontrar '\0'
+        printf("%c", caracter);
+
+        // leo el siguiente byte
+        direccionLogica++;
+        registros[4] = direccionLogica;
+        comprobarFalloSegmento();
+        calcularPunteroFisico(1);
+        leerDeMemoria();
+        caracter = registros[6];
+    }
+}
+
+void stringRead(){
+    int direccionLogica = registros[13]; // EDX donde guardar el string
+    int limite = registros[12];          // ECX maximo de caracteres (-1 = sin límite)
+    int contador = 0;
+    int caracter;
+
+    
+    while ((limite == -1 || contador < limite) && (caracter = getchar()) != '\n' && caracter != EOF){ // corta con Enter o fin de entrada
+
+        registros[4] = direccionLogica;   // LAR
+        comprobarFalloSegmento();
+        calcularPunteroFisico(1);         // MAR, 1 byte
+        escribirMBR(caracter);            // MBR
+        escribirEnMemoria();
+
+        direccionLogica++;
+        contador++;
+    }
+
+    // se escribe siempre el '\0' final
+    registros[4] = direccionLogica;
+    comprobarFalloSegmento();
+    calcularPunteroFisico(1);
+    escribirMBR(0);
+    escribirEnMemoria();
+}
+
 void sys(){
     int operando = registros[2]; // OP1: único operando (código de llamada al sistema)
     int numeroLlamada = leerOperando(operando);
@@ -176,8 +252,20 @@ void sys(){
         case 2: // WRITE
             sysWrite();
             break;
-        default:
+        case 3: 
+            stringRead();
             break;
+        case 4:
+            stringWrite();
+            break;
+        case 0:
+            clearScreen();
+            break;
+        case 15:
+            breakPoint();
+            break;
+        default:
+            break;    
     }
 }
 
