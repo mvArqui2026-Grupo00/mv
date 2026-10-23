@@ -247,9 +247,7 @@ int leerOperando(int operando){
         case 3: // memoria
             calcularPunteroLogico(datosOperando);
 
-            /// BETA
-
-            cantBytes = (datosOperando & 0xFF) >> 5; // Determina la cantidad de bytes a leer/escribir
+            int cantBytes = (datosOperando & 0xFF) >> 5; // Determina la cantidad de bytes a leer/escribir
 
             switch (cantBytes){
                 case 0b001:
@@ -277,7 +275,7 @@ void escribirOperando(int operando, int valor){
     switch (tipo){
         case 1: // registro
             int sector = (datosOperando >> 5) & 0b11;
-            int letter = datosOperando & 1F;
+            int letter = datosOperando & 0x1F;
             int value = valor;
 
             switch(sector){
@@ -309,7 +307,7 @@ void escribirOperando(int operando, int valor){
         case 3: // memoria
             calcularPunteroLogico(datosOperando);
             /// CHANGES ANAsHE
-            cantBytes = (datosOperando & 0xFF) >> 5; // Determina la cantidad de bytes a leer/escribir
+            int cantBytes = (datosOperando & 0xFF) >> 5; // Determina la cantidad de bytes a leer/escribir
 
             switch (cantBytes){
                 case 0b001:

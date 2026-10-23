@@ -41,10 +41,11 @@ void push(){
 }
 
 void pop(){
-    int valor = leerOperando(registros[7])   //  1 - Obtengo el valor que esta en Memoria apuntado por SP (Ya truncado)
+    int valor = leerOperando(registros[7]);   //  1 - Obtengo el valor que esta en Memoria apuntado por SP (Ya truncado)
 
-    int aux = registros[29] + STACK_SEGMENT_SIZE; //  Direccion Stack Segment + Cantidad de bytes en SS
-    /// STACK_SEGMENT_SIZE A DETERMINAR
+    int posStack = (registros[29] >> 16) & 0xFFFF; 
+    int tamStack = tablaSegm[posStack].tamaño;
+    int aux = registros[29] + tamStack; //  Direccion Stack Segment + Cantidad de bytes en SS
 
     if( registros[7] > aux){                 //  2 - Si SP apunta a una direccion fuera del segmento de PILA => Stack UNDERflow
         printf(":: [!] Stack underflow.");
@@ -57,7 +58,7 @@ void pop(){
 }
 
 void call(){                                        //  CALL subrutina  (OP1 = subrutina)
-    op1aux = leerOperando(registros[2]);            //  aux = subrutina
+    int op1aux = leerOperando(registros[2]);            //  aux = subrutina
     escribirOperando(registros[2], registros[0]);   //  OP1 = IP
     push();                                         //  PUSH IP
     escribirOperando(registros[2], op1aux);         //  OP1 = subrutina

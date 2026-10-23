@@ -200,11 +200,13 @@ int main(int argc, char *argv[]){
     else
         archivoBin = NULL;
     
+    hayImagen = 0;
     if (indiceArg < argc){
         inicioExtension = argv[indiceArg] + strlen(argv[indiceArg]) - 4;
         if (strcmp(inicioExtension,paramVmi) == 0){
             strcpy(archivoImagen,argv[indiceArg]);
             indiceArg++;
+            hayImagen = 1;
         }
     }
     else
