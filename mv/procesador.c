@@ -82,16 +82,20 @@ void paso(){
     if (!fueBreakpoint)
         BreakPoint();
 }
+//    if (variableBooleanaBreakpoint)
+//       breakpoint();
 }
 
 void procesa(){
-    // sigue mientras el IP apunte dentro del segmento de código (el 0 de la tabla) y no haya ocurrido un error
-    while ( ( (registros[0] >> 16) == 0) && ( (registros[0] & 0xFFFF) < tablaSegm[0].tamaño)){
+    // sigue mientras el IP apunte dentro del segmento de código y no haya ocurrido un error
+    int segmCode = registros[26] >> 16;
+    while ( ( (registros[0] >> 16) == segmCode) && ( (registros[0] & 0xFFFF) < tablaSegm[segmCode].tamaño) ){
         paso();
     }
     
-//    printf("\n -------------------------------------------\n");
-//    printf("\nദി(˵ •̀ ᴗ - ˵ ) ✧ \n\n");
-//    printf(":: Gracias por compilar (: \n:: GLASS Group S.L.R - Departamento de Codificacion Assembler\n\n");
+    //    printf("\n -------------------------------------------\n");
+    //    printf("\nദി(˵ •̀ ᴗ - ˵ ) ✧ \n\n");
+    //    printf(":: Gracias por compilar (: \n:: GLASS Group S.L.R - Departamento de Codificacion Assembler\n\n");
+    
     //subdivisión Grupo 0x00 -> departamento oficial encargado de la interpretación y ejecución Assembly
 }

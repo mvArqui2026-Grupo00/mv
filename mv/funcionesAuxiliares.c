@@ -1,9 +1,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <string.h>
 #include "funcionesAuxiliares.h"
 #include "estructuras.h"
 
+char *archivoImagen; 
 
 void imprimirHexa(unsigned int dato, int cantBytes){
     printf("0x");
@@ -53,7 +55,7 @@ void mostrarTablaSegm(){
         printf("Segmento[%d]: ",i);
         printf("Base: ");
         imprimirHexa(tablaSegm[i].base,2);
-        printf("Tamaño: ");
+        printf("Tamanio: "); // windows no detecta la ñ ):
         imprimirHexa(tablaSegm[i].tamaño,2);
         printf("\n");
     }
@@ -63,8 +65,7 @@ void mostrarTablaSegm(){
 
 //  FUNCIONES AUXILIARES
 
-unsigned char devolverByte(unsigned int dato, int nroByte){ // que nombre le ponemos a los parámetros
-    // el nro byte es el byte a devolver, siendo 0 el byte de menor significado, 1: el segundo de menor significado, ....
+unsigned char devolverByte(unsigned int dato, int nroByte){ // el nro byte es el byte a devolver, siendo 0 el byte de menor significado, 1: el segundo de menor significado, ....
     dato = dato >> (8 * nroByte);
     dato &= 0xFF;
     unsigned char aux = dato;
@@ -84,9 +85,125 @@ void comprobarFalloSegmento(){
         printf("\nError: Fallo de Segmento \n");
         exit(1);
     }
-        
+
 }
 
+void comprobarMemoriaInsuficiente(){
+    // originalmente iba a sumar los tamaños de todos los segmentos, pero dado que el stack segment es el último
+    // y siempre se encuentra presente, puedo usar su base + su tamaño como reemplazo a la suma de tamaños de segmentos
+    int posStack = (registros[29] >> 16) & 0xFFFF; 
+    int sumaSegm = tablaSegm[posStack].base;
+    sumaSegm += tablaSegm[posStack].tamaño;
+
+    if (sumaSegm > tamMemoria){
+        printf("Error: Memoria Insuficiente (%d > %d)\n",sumaSegm,tamMemoria);
+        exit(1);
+    }
+}
+
+void configurarStringBigEndian(char *cadena, unsigned int valor,int n){
+    for (int i=0; i<n; i++)
+        cadena[i] = (valor >> 8 * (n-1 -i)) & 0xFF;
+}
+
+int leerNumBigEndian(char *cadena, int n){
+    unsigned int num = 0;
+    for (int i=0; i<n; i++)
+        num |= cadena[i] << 8 * (n-1 -i);
+    return num;
+}
+
+void restaurarVmx(){
+    FILE *f = fopen(archivoImagen,"wb");
+    if (f == NULL){
+        printf("Error al abrir archivo imagen\n");
+        exit(1);
+    }
+    else{
+        char id[6], version, stringTamMemoria[2];
+        fread(id,6,1,f);
+        fread(&version,1,1,f);
+        fread(&stringTamMemoria,2,1,f);
+
+        if (strcmp(id,"VMX26") == 0 && version == 1){
+            tamMemoria = leerNumBigEndian(stringTamMemoria,2);
+
+            // restauro registros
+            char strReg[4];
+            for (int i=0; i<CANT_REGISTROS;i++){
+                fread(strReg,4,1,f);
+                registros[i] = leerNumBigEndian(strReg,4);
+            }
+
+            // restauro tablaSegm
+            char strSegm[4];
+            for (int i=0; i<CANT_SEGM;i++){
+                fread(strSegm,4,1,f);
+                tablaSegm[i].base = leerNumBigEndian(strSegm,2);
+                tablaSegm[i].tamaño = leerNumBigEndian(strSegm+2,2);
+            }
+
+            // restauro memoria
+            char *charByte;
+            for (int i=0; i<tamMemoria;i++){
+                fread(charByte,1,1,f);
+                memoria[i] = *charByte;
+            }       
+
+        }
+        else{
+            printf("Error, formato de archivo imagen válido\n");
+            exit(1);
+        }
+        fclose(f);
+    }
+}
+
+void setearVmi(){
+    FILE *f = fopen(archivoImagen,"wb");
+    if (f == NULL){
+        printf("Error al crear archivo imagen\n");
+        exit(1);
+    }
+    else{
+        char id[6] = "VMX26", version = 1, stringTamMemoria[2];
+        fwrite(id,strlen(id),1,f);
+        fwrite(&version,1,1,f);
+
+        configurarStringBigEndian(stringTamMemoria, tamMemoria,2);
+        fwrite(stringTamMemoria,2,1,f);
+
+
+        // copio registros
+        char strReg[4];
+        for (int i=0; i<CANT_REGISTROS;i++){
+            configurarStringBigEndian(strReg,registros[i],4);
+            fwrite(strReg,4,1,f);
+        }
+
+        // copio segmentos
+        char strSegm[4];
+        for (int i=0; i<CANT_SEGM;i++){
+            configurarStringBigEndian(strSegm,tablaSegm[i].base,2);
+            configurarStringBigEndian(strSegm+2,tablaSegm[i].tamaño,2);
+            fwrite(strSegm,4,1,f);
+        }
+
+        // copio memoria
+        char *charByte;
+        for (int i=0; i<tamMemoria;i++){
+            charByte = memoria + i;
+            fwrite(charByte,1,1,f);
+        }
+        fclose(f);
+    }
+}
+
+void escribirMemoriaArranque(int dirFisica,int valor){ // función a usar en el módulo de arranque
+    for (int i=0;i<4;i++){
+        memoria[dirFisica+i] = devolverByte(valor, 3-i);
+    }
+}
 
 int leerOperando(int operando){
     int tipo = (devolverByte(operando,3));
@@ -94,7 +211,33 @@ int leerOperando(int operando){
 
     switch (tipo){
         case 1: // registro
-            return registros[datosOperando & 0x1F];
+            int letter = datosOperando & 0x1F;
+            int sector = (datosOperando>>5) & 0b11;
+            int value = registros[letter];
+
+            switch (sector){
+            /// case 0       E A X
+            //      NO SE EVALUA YA QUE SE MANDAN 4 BYTES POR IGUAL
+
+                case 1: ///  A L
+                    value = value & 0xFF;
+                    value = (value << 24) >> 24;    // BETA: Propagacion de signo
+                    break;
+
+                case 2: ///  A H
+                    value = (value & 0xFF00) >> 8;
+                    value = (value << 24) >> 24;    // BETA: Propagacion de signo
+                    break;
+
+                case 3: ///  A X
+                    value = (value & 0xFFFF);
+                    value = (value << 16) >> 16;    // BETA: Propagacion de signo
+                    break;
+
+                default:
+                    break;
+            }
+            return value;
 
         case 2: // inmediato
             int16_t aux16 = datosOperando & 0xFFFF;
@@ -103,7 +246,23 @@ int leerOperando(int operando){
 
         case 3: // memoria
             calcularPunteroLogico(datosOperando);
-            calcularPunteroFisico(4);
+
+            /// BETA
+
+            cantBytes = (datosOperando & 0xFF) >> 5; // Determina la cantidad de bytes a leer/escribir
+
+            switch (cantBytes){
+                case 0b001:
+                    calcularPunteroFisico(1);
+                    break;
+                case 0b010:
+                    calcularPunteroFisico(2);
+                    break;
+                default:
+                    calcularPunteroFisico(4);
+                    break;
+            }
+
             leerDeMemoria();
             return registros[6];
         default: // ninguno
@@ -117,12 +276,53 @@ void escribirOperando(int operando, int valor){
 
     switch (tipo){
         case 1: // registro
-            registros[datosOperando & 0x1F] = valor;
+            int sector = (datosOperando >> 5) & 0b11;
+            int letter = datosOperando & 1F;
+            int value = valor;
+
+            switch(sector){
+            /// case 0       E A X
+            //      No se analiza ya que manda 4 bytes por igual
+
+                case 1: ///  A L
+                    value = (value >> 24) & 0xFF;
+                    value |= registros[letter] & 0xFFFFFF00;
+                    break;
+
+                case 2: ///  A H
+                    value = (value >> 24) & 0xFF00;
+                    value |= registros[letter] & 0xFFFF00FF;
+                    break;
+
+                case 3: ///  A X
+                    value = (value >> 16) & 0xFFFF;
+                    value |= registros[letter] & 0xFFFF0000;
+                    break;
+
+                default:
+                    break;
+
+            }
+            registros[letter] = value;
             break;
 
         case 3: // memoria
             calcularPunteroLogico(datosOperando);
-            calcularPunteroFisico(4);
+            /// CHANGES ANAsHE
+            cantBytes = (datosOperando & 0xFF) >> 5; // Determina la cantidad de bytes a leer/escribir
+
+            switch (cantBytes){
+                case 0b001:
+                    calcularPunteroFisico(1);
+                    break;
+                case 0b010:
+                    calcularPunteroFisico(2);
+                    break;
+                default:
+                    calcularPunteroFisico(4);
+                    break;
+            }
+            ///---
             escribirMBR(valor);
             escribirEnMemoria();
             break;
