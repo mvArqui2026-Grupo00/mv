@@ -3,7 +3,7 @@
 
 PuntFunc funciones[CANT_FUNC];
 
-void inicializarPunteroFunciones(){
+void inicializarPunteroFunciones(int version){
     // en esta primera parte implementamos 28 funciones
     funciones[0] = sys;
     funciones[1] = jmp;
@@ -18,10 +18,19 @@ void inicializarPunteroFunciones(){
     funciones[10] = not; 
 
     // funciones agregadas en la 2da parte
-    funciones[11] = push;
-    funciones[12] = pop;
-    funciones[13] = call;
-    funciones[14] = ret;
+    if (version == 1){
+        funciones[11] = notDefined;
+        funciones[12] = notDefined;
+        funciones[13] = notDefined;
+        funciones[14] = notDefined;
+    }
+    else{
+        funciones[11] = push;
+        funciones[12] = pop;
+        funciones[13] = call;
+        funciones[14] = ret;
+    }
+
     //
 
     funciones[15] = stop;    
