@@ -150,7 +150,7 @@ void clearScreen(){
     // \033[H : Otra vez escape y que lleve el cursor a la posicion inicial
 }
 
-void BreakPoint(){
+void breakPoint(){
     if (hayImagen){
         generarImagen();
 
@@ -167,6 +167,57 @@ void BreakPoint(){
         }
     }
 }
+
+void stringWrite(){
+    int direccionLogica = registros[13]; // EDX: dirección lógica del string
+    int caracter;
+
+    registros[4] = direccionLogica;      // LAR
+    comprobarFalloSegmento();
+    calcularPunteroFisico(1);            // MAR, 1 byte (tamaño de caracter)
+    leerDeMemoria();
+    caracter = registros[6];             // MBR
+
+    while (caracter != 0){               // hasta encontrar '\0'
+        printf("%c", caracter);
+
+        // leo el siguiente byte
+        direccionLogica++;
+        registros[4] = direccionLogica;
+        comprobarFalloSegmento();
+        calcularPunteroFisico(1);
+        leerDeMemoria();
+        caracter = registros[6];
+    }
+}
+
+void stringRead(){
+    int direccionLogica = registros[13]; // EDX donde guardar el string
+    int limite = registros[12];          // ECX maximo de caracteres (-1 = sin límite)
+    int contador = 0;
+    int caracter;
+
+    
+    while ((limite == -1 || contador < limite) && (caracter = getchar()) != '\n' && caracter != EOF){ // corta con Enter o fin de entrada
+
+        registros[4] = direccionLogica;   // LAR
+        comprobarFalloSegmento();
+        calcularPunteroFisico(1);         // MAR, 1 byte
+        escribirMBR(caracter);            // MBR
+        escribirEnMemoria();
+
+        direccionLogica++;
+        contador++;
+    }
+
+    // se escribe siempre el '\0' final
+    registros[4] = direccionLogica;
+    comprobarFalloSegmento();
+    calcularPunteroFisico(1);
+    escribirMBR(0);
+    escribirEnMemoria();
+}
+
 void sys(){
     int operando = registros[2]; // OP1: único operando (código de llamada al sistema)
     int numeroLlamada = leerOperando(operando);
