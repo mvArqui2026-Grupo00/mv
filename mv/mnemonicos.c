@@ -24,21 +24,44 @@ void stop(){
 }
 
 void ret(){
-
+    escribirOperando(registros[2], registros[0]);   //  OP1 = IP
+    pop();                                          //  POP IP    (IP ahora contiene la siguiente instruccion en la subrut. invocada)
 }
 
 //--------------    UN OPERANDO   --------------------
 
 void push(){
-
+    registros[7] -= 4;                      //  1 - Decrementar SP: SP-4
+    if(registros[7] < registros[29]){       //  2 - SP < SS => STACK OverFLOW
+        printf(":: [!] STACK OVERFLOW");
+        exit(1);
+    }
+    int valor = leerOperando( registros[2] ); //  3 - Obtener valor del operando (Ya devuelve 4 bytes con signo propagado)
+    escribirOperando( registros[7], valor );  //  4 - En la memoria, almaceno el VALOR donde este apuntando el SP
 }
 
 void pop(){
+    int valor = leerOperando(registros[7])   //  1 - Obtengo el valor que esta en Memoria apuntado por SP (Ya truncado)
 
+    int aux = registros[29] + STACK_SEGMENT_SIZE; //  Direccion Stack Segment + Cantidad de bytes en SS
+    /// STACK_SEGMENT_SIZE A DETERMINAR
+
+    if( registros[7] > aux){                 //  2 - Si SP apunta a una direccion fuera del segmento de PILA => Stack UNDERflow
+        printf(":: [!] Stack underflow.");
+        exit(1);
+    }
+
+    escribirOperando(registros[2], valor);   //  3 - Asignar resultado al primer operando
+
+    registros[7] += 4;                       //  4 - Incrementar SP: SP + 4
 }
 
-void call(){
-
+void call(){                                        //  CALL subrutina  (OP1 = subrutina)
+    op1aux = leerOperando(registros[2]);            //  aux = subrutina
+    escribirOperando(registros[2], registros[0]);   //  OP1 = IP
+    push();                                         //  PUSH IP
+    escribirOperando(registros[2], op1aux);         //  OP1 = subrutina
+    jmp();                                          //  JMP subrutina
 }
 
 //modos del Sys
@@ -85,7 +108,7 @@ void sysRead(){
         }
         escribirMBR(valor); // config mbr
         escribirEnMemoria();
-        direccionLogica += tamano;        
+        direccionLogica += tamano;
     }
 }
 
@@ -113,20 +136,20 @@ void sysWrite(){
             printf("0b");
             for (int b = 31; b >= 0; b--){
                 int bit = (valor >> b) & 1;
-                if ( (!empezo) && (bit == 1)) 
+                if ( (!empezo) && (bit == 1))
                     empezo = 1;
-                if (empezo) 
+                if (empezo)
                     printf("%d", bit);
             }
-            if (!empezo) 
+            if (!empezo)
               printf("0"); // el valor era 0
         }
-        if (modo & 0x08) 
+        if (modo & 0x08)
           printf(" 0x%X", valor); // hexadecimal
 
-        if (modo & 0x04) 
+        if (modo & 0x04)
           printf(" 0o%o", valor); // octal
-          
+
         if (modo & 0x02){ // caracteres
             if (valor >= 32 && valor <= 126)
                 printf(" %c", valor);
@@ -134,7 +157,7 @@ void sysWrite(){
                 printf("."); // no imprimible
             //}
         }
-        if (modo & 0x01) 
+        if (modo & 0x01)
             printf(" %d", valor); // decimal
 
         printf("\n");
@@ -185,10 +208,10 @@ int overflow(){
 }
 
 void jmp(){
-    registros[0] &= 0xFFFF0000;
-    registros[0] += leerOperando(registros[2]);
+    registros[0] &= 0xFFFF0000;                     //  IP = IP & FFFF0000
+    registros[0] += leerOperando(registros[2]);     //  IP = IP + OP1
 
-    registros[4] = registros[0];
+    registros[4] = registros[0];                    //  LAR = IP
     comprobarFalloSegmento();
 }
 
@@ -197,7 +220,7 @@ void jp(){
         jmp();
     }
 }
-void jneg(){ 
+void jneg(){
     if (negative())
         jmp();
 }
@@ -278,7 +301,7 @@ void add(){
 
     int carry = 0;
     int overflow = 0;
-    verificarCarryOverflowSuma(valor1,valor2,suma,&carry,&overflow);    
+    verificarCarryOverflowSuma(valor1,valor2,suma,&carry,&overflow);
 
     setCC(suma,carry, overflow);
     escribirOperando(registros[2], suma); //  Escribe 'suma' en OP1;
@@ -356,7 +379,7 @@ void or(){
     int valor1 = leerOperando(registros[2]);
     int valor2 = leerOperando(registros[3]);
     int resultado = valor1 | valor2;
- 
+
     setCC(resultado,0,0);
     escribirOperando(registros[2], resultado);}
 
@@ -411,9 +434,9 @@ void shr(){
     int valorConSigno = leerOperando(operando); // valor real de A (no el descriptor)
     unsigned int valor = (unsigned int)valorConSigno;
     int cantidad = leerOperando(registros[3]); // op2
-    
+
     valor = valor >> cantidad;
- 
+
     int overflow = ((valorConSigno & 0x80000000) != 0); // si originalmente el número es negativo, hay overflow
     setCC(valor, 0, overflow);
     escribirOperando(operando, valor);
@@ -440,7 +463,7 @@ void ldl(){
     int resultado = (valorA & 0xFFFF0000) | (valorB & 0xFFFF); // conserva los 16 bits altos de A, reemplaza los 16 bits bajos con los bajos de B
 
     escribirOperando(operandoA, resultado);
-    setCC(resultado, 0, 0); // solo chequea si es negativo o cero    
+    setCC(resultado, 0, 0); // solo chequea si es negativo o cero
 }
 
 //Carga los 2 bytes más significativos del primer operando (OP1), con los 2 bytes menos significativos del segundo operando (OP2).
