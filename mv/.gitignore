@@ -2,6 +2,7 @@
 pruebas
 *.vmx
 *.asm
+*.vmi
 
 vmt
 vmt.exe

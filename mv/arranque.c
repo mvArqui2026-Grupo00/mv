@@ -192,26 +192,40 @@ int main(int argc, char *argv[]){
 
     printf("\n");
 
+
     inicioExtension = argv[indiceArg] + strlen(argv[indiceArg]) - 4; // bin = a.vmx\0 ; strlen -> 5; bin + 5 - 4 apunta a ".vmx\0" (strlen no considera \0)
     if (strcmp(inicioExtension,paramVmx) == 0){
         strcpy(archivoBin,argv[indiceArg]);
         indiceArg++;
+//        printf("%d\n",indiceArg);
+//        printf("archivoBin = %s\n",archivoBin);
     }
-    else
+    else{
         archivoBin = NULL;
-    
+    }
+        
     hayImagen = 0;
     if (indiceArg < argc){
-        inicioExtension = argv[indiceArg] + strlen(argv[indiceArg]) - 4;
-        if (strcmp(inicioExtension,paramVmi) == 0){
-            strcpy(archivoImagen,argv[indiceArg]);
-            indiceArg++;
-            hayImagen = 1;
+        if ((strlen(argv[indiceArg]) - 4) >= 0){
+            inicioExtension = argv[indiceArg] + strlen(argv[indiceArg]) - 4;
+            if (strcmp(inicioExtension,paramVmi) == 0){
+//                printf("argv[indiceArg]: '%s'\n",argv[indiceArg]);
+//                printf("arImagen: '%s' \n",archivoImagen);                
+                strcpy(archivoImagen,argv[indiceArg]);
+//                printf("funco");
+                indiceArg++;
+//                printf("%d\n",indiceArg);
+//                printf("archivoImagen = %s\n",archivoImagen);
+                hayImagen = 1;
+            }
         }
     }
-    else
-        archivoImagen = NULL;
-
+//    else{
+//        archivoImagen = NULL;
+//    }
+    
+//    printf("Hay IMAGEN? %d\n",hayImagen);   
+    
     tamMemoria = CANT_CELDAS;
     if (indiceArg < argc && strncmp(argv[indiceArg],paramMem,2) == 0){
         char c;
@@ -227,12 +241,14 @@ int main(int argc, char *argv[]){
 
         tamMemoria = num;
         indiceArg++;
+//        printf("%d\n",indiceArg);
     }
 
     disassembler = 0;
-    if (indiceArg < argc && strcmp(argv[indiceArg],paramDis) == 0){
+    if (indiceArg < argc && strcmp(argv[indiceArg],paramDis) == 0){        
         disassembler = 1;
         indiceArg++;
+//        printf("%d\n",indiceArg);
     }
 
     if (archivoBin){ // si no se carga un archivoBin no tomamos ningunos de los parámetros

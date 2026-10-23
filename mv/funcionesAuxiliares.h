@@ -1,7 +1,7 @@
 #ifndef FUNCIONES_AUXILIARES_H
 #define FUNCIONES_AUXILIARES_H
 
-extern char *archivoImagen;
+extern char archivoImagen[100];
 
 // funciones para testing
 void imprimirHexa(unsigned int dato, int cantBytes);

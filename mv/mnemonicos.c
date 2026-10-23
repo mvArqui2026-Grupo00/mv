@@ -176,7 +176,7 @@ void clearScreen(){
 
 void breakPoint(){
     if (hayImagen){
-        generarImagen();
+        setearVmi();
 
         char linea[10];
         fgets(linea, sizeof(linea), stdin);
@@ -195,12 +195,16 @@ void breakPoint(){
 void stringWrite(){
     int direccionLogica = registros[13]; // EDX: dirección lógica del string
     int caracter;
+    int dirFisica;
 
     registros[4] = direccionLogica;      // LAR
     comprobarFalloSegmento();
     calcularPunteroFisico(1);            // MAR, 1 byte (tamaño de caracter)
     leerDeMemoria();
     caracter = registros[6];             // MBR
+
+    dirFisica = registros[5] & 0xFFFF;
+    printf("[%04X]: ", dirFisica);
 
     while (caracter != 0){               // hasta encontrar '\0'
         printf("%c", caracter);
@@ -213,6 +217,7 @@ void stringWrite(){
         leerDeMemoria();
         caracter = registros[6];
     }
+    printf("\n");
 }
 
 void stringRead(){
@@ -220,8 +225,13 @@ void stringRead(){
     int limite = registros[12];          // ECX maximo de caracteres (-1 = sin límite)
     int contador = 0;
     int caracter;
+    int dirFisica;
 
-    
+    registros[4] = direccionLogica;   // LAR
+    calcularPunteroFisico(1);         // MAR, 1 byte
+    dirFisica = registros[5] & 0xFFFF;
+    printf("[%04X]: ", dirFisica);
+
     while ((limite == -1 || contador < limite) && (caracter = getchar()) != '\n' && caracter != EOF){ // corta con Enter o fin de entrada
 
         registros[4] = direccionLogica;   // LAR
@@ -240,6 +250,7 @@ void stringRead(){
     calcularPunteroFisico(1);
     escribirMBR(0);
     escribirEnMemoria();
+    printf("\n");
 }
 
 void sys(){

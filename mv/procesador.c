@@ -80,7 +80,7 @@ void paso(){
             fueBreakpoint = 1;
 
     if (!fueBreakpoint)
-        BreakPoint();
+        breakPoint();
 }
 //    if (variableBooleanaBreakpoint)
 //       breakpoint();

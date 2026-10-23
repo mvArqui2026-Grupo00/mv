@@ -5,7 +5,7 @@
 #include "funcionesAuxiliares.h"
 #include "estructuras.h"
 
-char *archivoImagen; 
+char archivoImagen[100];
 
 void imprimirHexa(unsigned int dato, int cantBytes){
     printf("0x");
@@ -114,19 +114,20 @@ int leerNumBigEndian(char *cadena, int n){
 }
 
 void restaurarVmx(){
-    FILE *f = fopen(archivoImagen,"wb");
+    FILE *f = fopen(archivoImagen,"rb");
     if (f == NULL){
         printf("Error al abrir archivo imagen\n");
         exit(1);
     }
     else{
         char id[6], version, stringTamMemoria[2];
-        fread(id,6,1,f);
+        fread(id,5,1,f);
         fread(&version,1,1,f);
-        fread(&stringTamMemoria,2,1,f);
+        fread(stringTamMemoria,2,1,f);
 
         if (strcmp(id,"VMX26") == 0 && version == 1){
             tamMemoria = leerNumBigEndian(stringTamMemoria,2);
+            tamMemoria *= 1024;
 
             // restauro registros
             char strReg[4];
@@ -152,7 +153,7 @@ void restaurarVmx(){
 
         }
         else{
-            printf("Error, formato de archivo imagen válido\n");
+            printf("Error, formato de archivo imagen inválido\n");
             exit(1);
         }
         fclose(f);
@@ -170,7 +171,7 @@ void setearVmi(){
         fwrite(id,strlen(id),1,f);
         fwrite(&version,1,1,f);
 
-        configurarStringBigEndian(stringTamMemoria, tamMemoria,2);
+        configurarStringBigEndian(stringTamMemoria, tamMemoria / 1024,2);
         fwrite(stringTamMemoria,2,1,f);
 
 
