@@ -204,7 +204,8 @@ void stringWrite(){
     caracter = registros[6];             // MBR
 
     dirFisica = registros[5] & 0xFFFF;
-    printf("[%04X]: ", dirFisica);
+ //   printf("[%04X]: ", dirFisica);
+ //   estos no van en los string write y read
 
     while (caracter != 0){               // hasta encontrar '\0'
         printf("%c", caracter);
@@ -230,8 +231,8 @@ void stringRead(){
     registros[4] = direccionLogica;   // LAR
     calcularPunteroFisico(1);         // MAR, 1 byte
     dirFisica = registros[5] & 0xFFFF;
-    printf("[%04X]: ", dirFisica);
-
+ //   printf("[%04X]: ", dirFisica);
+ //   estos no van en los string write y read
     while ((limite == -1 || contador < limite) && (caracter = getchar()) != '\n' && caracter != EOF){ // corta con Enter o fin de entrada
 
         registros[4] = direccionLogica;   // LAR
