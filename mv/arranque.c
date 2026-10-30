@@ -252,7 +252,7 @@ int main(int argc, char *argv[]){
     }
 
 
-    if (archivoBin){
+    if (strlen(archivoBin) > 0){
         // esto es en caso de que haya un parametro .vmx
         f = fopen(archivoBin,"rb");
         if (f == NULL){
@@ -303,8 +303,9 @@ int main(int argc, char *argv[]){
         }
     }
 
-    else { // no se pasó un .vmx como parámetro
+    else { // no se pasó un .vmx como argumento de la vmx
         if (strlen(archivoImagen) == 0)
+            // tampoco se pasó un .vmi como argumento de la vmx
             return 1;
         else {
             f = fopen(archivoImagen,"rb");
