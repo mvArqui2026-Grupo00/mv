@@ -91,7 +91,7 @@ void comprobarFalloSegmento(){
 void comprobarMemoriaInsuficiente(){
     // originalmente iba a sumar los tamaños de todos los segmentos, pero dado que el stack segment es el último
     // y siempre se encuentra presente, puedo usar su base + su tamaño como reemplazo a la suma de tamaños de segmentos
-    int posStack = (registros[29] >> 16) & 0xFFFF; 
+    int posStack = (registros[29] >> 16) & 0xFFFF;
     int sumaSegm = tablaSegm[posStack].base;
     sumaSegm += tablaSegm[posStack].tamaño;
 
@@ -149,7 +149,7 @@ void restaurarVmx(){
             for (int i=0; i<tamMemoria;i++){
                 fread(charByte,1,1,f);
                 memoria[i] = *charByte;
-            }       
+            }
 
         }
         else{
@@ -212,6 +212,7 @@ int leerOperando(int operando){
 
     switch (tipo){
         case 1: // registro
+
             int letter = datosOperando & 0x1F;
             int sector = (datosOperando>>5) & 0b11;
             int value = registros[letter];
@@ -238,6 +239,7 @@ int leerOperando(int operando){
                 default:
                     break;
             }
+
             return value;
 
         case 2: // inmediato
@@ -284,18 +286,36 @@ void escribirOperando(int operando, int valor){
             //      No se analiza ya que manda 4 bytes por igual
 
                 case 1: ///  A L
+                    //viejo
                     value = (value >> 24) & 0xFF;
                     value |= registros[letter] & 0xFFFFFF00;
+
+                    //nuevo
+                    //value =  value & 0xFF;
+                    //value |= registros[letter] & 0xFFFFFF00;
+
                     break;
 
                 case 2: ///  A H
+                    //viejo
                     value = (value >> 24) & 0xFF00;
                     value |= registros[letter] & 0xFFFF00FF;
+
+                    //nuevo
+                    //value =  value & 0xFF00;
+                    //value |= registros[letter] & 0xFFFF00FF;
+
                     break;
 
                 case 3: ///  A X
+                    //viejo
                     value = (value >> 16) & 0xFFFF;
                     value |= registros[letter] & 0xFFFF0000;
+
+                    //nuevo
+                    //value =  value & 0xFFFF;
+                    //value |= registros[letter] & 0xFFFF0000;
+
                     break;
 
                 default:
@@ -303,6 +323,7 @@ void escribirOperando(int operando, int valor){
 
             }
             registros[letter] = value;
+
             break;
 
         case 3: // memoria

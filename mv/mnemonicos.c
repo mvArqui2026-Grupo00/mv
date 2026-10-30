@@ -32,25 +32,38 @@ void ret(){
 
 void push(){
     registros[7] -= 4;                      //  1 - Decrementar SP: SP-4
-    if(registros[7] < registros[29]){       //  2 - SP < SS => STACK OverFLOW
-        printf(":: [!] STACK OVERFLOW");
+
+    if(registros[7] <= registros[29]){       //  2 - SP < SS => STACK OverFLOW
+        printf("\n:: [!] STACK OVERFLOW\n\n");
         exit(1);
     }
+
     int valor = leerOperando( registros[2] ); //  3 - Obtener valor del operando (Ya devuelve 4 bytes con signo propagado)
-    escribirOperando( registros[7], valor );  //  4 - En la memoria, almaceno el VALOR donde este apuntando el SP
+
+    registros[4] = registros[7];///-------------------------
+    calcularPunteroFisico(4);   ///-------------------------
+    registros[6] = valor;       ///-------------------------
+
+    escribirEnMemoria();        ///--------------------------
+    //escribirOperando( registros[7], valor );  //  4 - En la memoria, almaceno el VALOR donde este apuntando el SP
 }
 
 void pop(){
-    int valor = leerOperando(registros[7]);   //  1 - Obtengo el valor que esta en Memoria apuntado por SP (Ya truncado)
-
-    int posStack = (registros[29] >> 16) & 0xFFFF; 
+    //int valor = leerOperando(registros[7]);   //  1 - Obtengo el valor que esta en Memoria apuntado por SP (Ya truncado)
+    int valor;
+    int posStack = (registros[29] >> 16) & 0xFFFF;
     int tamStack = tablaSegm[posStack].tamaño;
     int aux = registros[29] + tamStack; //  Direccion Stack Segment + Cantidad de bytes en SS
 
-    if( registros[7] > aux){                 //  2 - Si SP apunta a una direccion fuera del segmento de PILA => Stack UNDERflow
-        printf(":: [!] Stack underflow.");
+    if( registros[7] >= aux){                 //  2 - Si SP apunta a una direccion fuera del segmento de PILA => Stack UNDERflow
+        printf("\n:: [!] STACK UNDERFLOW.\n\n");
         exit(1);
     }
+
+    registros[4] = registros[7];///-------------------------
+    calcularPunteroFisico(4);   ///-------------------------
+    leerDeMemoria(4);           ///-------------------------
+    valor = registros[6];       ///-------------------------
 
     escribirOperando(registros[2], valor);   //  3 - Asignar resultado al primer operando
 
@@ -265,7 +278,7 @@ void sys(){
         case 2: // WRITE
             sysWrite();
             break;
-        case 3: 
+        case 3:
             stringRead();
             break;
         case 4:
@@ -278,7 +291,7 @@ void sys(){
             breakPoint();
             break;
         default:
-            break;    
+            break;
     }
 }
 
@@ -380,6 +393,8 @@ void setCC(int resultado, int hayCarry, int hayOverflow){    //  Modifica CC (re
 
 void mov(){
     int valor = leerOperando(registros[3]);    //  Guarda valor de OP2 en valor
+
+
     setCC(valor, 0, 0); // analizo el valor (si es negativo o 0)
     escribirOperando(registros[2], valor); //  Escribe valor en lo que dicta OP1;
 }
@@ -541,6 +556,7 @@ void shr(){
     int overflow = ((valorConSigno & 0x80000000) != 0); // si originalmente el número es negativo, hay overflow
     setCC(valor, 0, overflow);
     escribirOperando(operando, valor);
+
 }
 
 void sar(){
