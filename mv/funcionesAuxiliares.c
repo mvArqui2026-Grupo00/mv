@@ -286,44 +286,25 @@ void escribirOperando(int operando, int valor){
             //      No se analiza ya que manda 4 bytes por igual
 
                 case 1: ///  A L
-                    //viejo
-                    value = (value >> 24) & 0xFF;
-                    value |= registros[letter] & 0xFFFFFF00;
-
-                    //nuevo
-                    //value =  value & 0xFF;
-                    //value |= registros[letter] & 0xFFFFFF00;
+                    value = (registros[letter] & 0xFFFFFF00) | (value & 0xFF);
 
                     break;
 
                 case 2: ///  A H
-                    //viejo
-                    value = (value >> 24) & 0xFF00;
-                    value |= registros[letter] & 0xFFFF00FF;
-
-                    //nuevo
-                    //value =  value & 0xFF00;
-                    //value |= registros[letter] & 0xFFFF00FF;
+                    value = (registros[letter] & 0xFFFF00FF) | ((value & 0xFF) << 8);
 
                     break;
 
                 case 3: ///  A X
-                    //viejo
-                    value = (value >> 16) & 0xFFFF;
-                    value |= registros[letter] & 0xFFFF0000;
-
-                    //nuevo
-                    //value =  value & 0xFFFF;
-                    //value |= registros[letter] & 0xFFFF0000;
-
+                    value = (registros[letter] & 0xFFFF0000) | (value & 0xFFFF);
                     break;
 
                 default:
                     break;
 
             }
-            registros[letter] = value;
 
+            registros[letter] = value;
             break;
 
         case 3: // memoria

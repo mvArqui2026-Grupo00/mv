@@ -394,7 +394,6 @@ void setCC(int resultado, int hayCarry, int hayOverflow){    //  Modifica CC (re
 void mov(){
     int valor = leerOperando(registros[3]);    //  Guarda valor de OP2 en valor
 
-
     setCC(valor, 0, 0); // analizo el valor (si es negativo o 0)
     escribirOperando(registros[2], valor); //  Escribe valor en lo que dicta OP1;
 }
