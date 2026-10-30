@@ -185,46 +185,34 @@ int main(int argc, char *argv[]){
     FILE *f;
     int indiceArg = 1; // para moverme por los argumentos de la ejecución de la mv
     char *paramVmx = ".vmx", *paramVmi = ".vmi", *paramMem = "m=", *paramDis = "-d", *paramParam = "-p";
-    char *archivoBin, *inicioExtension; // *archivoImagen -> lo pasé a funciones auxiliares, para poder usarlo como variable global en dicho módulo
+    char archivoBin[100], *inicioExtension; // *archivoImagen -> lo pasé a funciones auxiliares, para poder usarlo como variable global en dicho módulo
+
+    strcpy(archivoBin,"");
+    strcpy(archivoImagen,"");
 
     char identif[6], identifLect[5], byteVersion;
     unsigned char byte1, byte2;
 
     printf("\n");
 
-
     inicioExtension = argv[indiceArg] + strlen(argv[indiceArg]) - 4; // bin = a.vmx\0 ; strlen -> 5; bin + 5 - 4 apunta a ".vmx\0" (strlen no considera \0)
     if (strcmp(inicioExtension,paramVmx) == 0){
         strcpy(archivoBin,argv[indiceArg]);
         indiceArg++;
-//        printf("%d\n",indiceArg);
-//        printf("archivoBin = %s\n",archivoBin);
-    }
-    else{
-        archivoBin = NULL;
     }
         
     hayImagen = 0;
     if (indiceArg < argc){
-        if ((strlen(argv[indiceArg]) - 4) >= 0){
-            inicioExtension = argv[indiceArg] + strlen(argv[indiceArg]) - 4;
+
+        if (((strlen(argv[indiceArg]) - 4)) >= 0){
+            inicioExtension = argv[indiceArg] + strlen(argv[indiceArg]) - 4; // acá está el error
             if (strcmp(inicioExtension,paramVmi) == 0){
-//                printf("argv[indiceArg]: '%s'\n",argv[indiceArg]);
-//                printf("arImagen: '%s' \n",archivoImagen);                
                 strcpy(archivoImagen,argv[indiceArg]);
-//                printf("funco");
                 indiceArg++;
-//                printf("%d\n",indiceArg);
-//                printf("archivoImagen = %s\n",archivoImagen);
                 hayImagen = 1;
             }
         }
     }
-//    else{
-//        archivoImagen = NULL;
-//    }
-    
-//    printf("Hay IMAGEN? %d\n",hayImagen);   
     
     tamMemoria = CANT_CELDAS;
     if (indiceArg < argc && strncmp(argv[indiceArg],paramMem,2) == 0){
@@ -241,16 +229,13 @@ int main(int argc, char *argv[]){
 
         tamMemoria = num;
         indiceArg++;
-//        printf("%d\n",indiceArg);
     }
 
     disassembler = 0;
     if (indiceArg < argc && strcmp(argv[indiceArg],paramDis) == 0){        
         disassembler = 1;
         indiceArg++;
-//        printf("%d\n",indiceArg);
     }
-
     if (archivoBin){ // si no se carga un archivoBin no tomamos ningunos de los parámetros
         tamParam = cantParam = 0;
         if (indiceArg < argc && strcmp(argv[indiceArg],paramParam) == 0){
@@ -267,14 +252,13 @@ int main(int argc, char *argv[]){
     }
 
 
-    
-    if (archivoBin){
+    if (strlen(archivoBin) > 0){
         // esto es en caso de que haya un parametro .vmx
         f = fopen(archivoBin,"rb");
-        if (f == NULL)
+        if (f == NULL){
             return 1;
+        }
         else {
-
             fread(identifLect,1,5,f);
             for (int i=0;i<5;i++)
                 identif[i] = identifLect[i];
@@ -319,8 +303,9 @@ int main(int argc, char *argv[]){
         }
     }
 
-    else { // no se pasó un .vmx como parámetro
-        if (archivoImagen == NULL)
+    else { // no se pasó un .vmx como argumento de la vmx
+        if (strlen(archivoImagen) == 0)
+            // tampoco se pasó un .vmi como argumento de la vmx
             return 1;
         else {
             f = fopen(archivoImagen,"rb");
