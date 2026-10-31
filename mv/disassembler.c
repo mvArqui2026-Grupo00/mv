@@ -82,12 +82,59 @@ char reg[32][5] = {
     "PS",
 };
 
+// Nuevos Modificadores de Registros
+
+char regWord[6][3] = {
+    "AX",
+    "BX",
+    "CX",
+    "DX",
+    "EX",
+    "FX"
+};
+
+char regLow[6][3] = {
+    "AL",
+    "BL",
+    "CL",
+    "DL",
+    "EL",
+    "FL"
+};
+
+char regHigh[6][3] = {
+    "AH",
+    "BH",
+    "CH",
+    "DH",
+    "EH",
+    "FH"
+};
+
+
 void mostrarOperando(unsigned int tipo, int operando){
     switch (tipo){
         case 0:
             break;
         case 1:
-            printf("%s",reg[operando]);
+            int modificadorRegistro = (operando >> 5) & 0x3;
+            int nroReg = operando & 0x1F;
+            
+            if (nroReg >= 10 && nroReg <= 15){ // EAX-EFX
+                nroReg -= 10; // pasa a ser "offset" de los registros de propósito general
+
+                if (modificadorRegistro == 0b00)
+                    printf("%s",reg[nroReg + 10]);
+                else if (modificadorRegistro == 0b01)
+                    printf("%s",regLow[nroReg]);
+                else if (modificadorRegistro == 0b10)
+                    printf("%s",regHigh[nroReg]);
+                else // 0b11
+                    printf("%s",regWord[nroReg]);
+            }
+
+            else
+                printf("%s",reg[nroReg]);
             break;
         case 2:
             int16_t aux16 = operando & 0xFFFF;
@@ -95,6 +142,13 @@ void mostrarOperando(unsigned int tipo, int operando){
             printf("%d",aux);
             break;
         case 3:
+            int modificadorMemoria = (operando >> 5) & 0x7; 
+            if (modificadorMemoria == 0b001)
+                printf("b");
+            else if (modificadorMemoria == 0b010)
+                printf("w");
+            else
+                printf("l");
             printf("[%s+%d]", reg[operando & 0x1F], (operando & 0xFFFF00) >> 8);
             break;  
     }

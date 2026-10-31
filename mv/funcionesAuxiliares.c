@@ -125,7 +125,7 @@ void restaurarVmx(){
         fread(&version,1,1,f);
         fread(stringTamMemoria,2,1,f);
 
-        if (strcmp(id,"VMX26") == 0 && version == 1){
+        if (strcmp(id,"VMI26") == 0 && version == 1){
             tamMemoria = leerNumBigEndian(stringTamMemoria,2);
             tamMemoria *= 1024;
 
@@ -167,7 +167,7 @@ void setearVmi(){
         exit(1);
     }
     else{
-        char id[6] = "VMX26", version = 1, stringTamMemoria[2];
+        char id[6] = "VMI26", version = 1, stringTamMemoria[2];
         fwrite(id,strlen(id),1,f);
         fwrite(&version,1,1,f);
 
