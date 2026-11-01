@@ -24,7 +24,8 @@ void stop(){
 }
 
 void ret(){
-    escribirOperando(registros[2], registros[0]);   //  OP1 = IP
+    // escribirOperando(0x01000002,0x01000000 );   //  OP1 = IP
+    registros[2] = 0x01000000;
     pop();                                          //  POP IP    (IP ahora contiene la siguiente instruccion en la subrut. invocada)
 }
 
@@ -33,7 +34,7 @@ void ret(){
 void push(){
     registros[7] -= 4;                      //  1 - Decrementar SP: SP-4
 
-    if(registros[7] <= registros[29]){       //  2 - SP < SS => STACK OverFLOW
+    if(registros[7] < registros[29]){       //  2 - SP < SS => STACK OverFLOW
         printf("\n:: [!] STACK OVERFLOW\n\n");
         exit(1);
     }
@@ -71,10 +72,12 @@ void pop(){
 }
 
 void call(){                                        //  CALL subrutina  (OP1 = subrutina)
-    int op1aux = leerOperando(registros[2]);            //  aux = subrutina
-    escribirOperando(registros[2], registros[0]);   //  OP1 = IP
+    int op1aux = registros[2];            //  aux = subrutina
+
+    registros[2] = 0x01000000;
     push();                                         //  PUSH IP
-    escribirOperando(registros[2], op1aux);         //  OP1 = subrutina
+
+    registros[2] = op1aux;
     jmp();                                          //  JMP subrutina
 }
 

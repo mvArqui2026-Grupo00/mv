@@ -180,6 +180,9 @@ void setearVmi(){
         for (int i=0; i<CANT_REGISTROS;i++){
             configurarStringBigEndian(strReg,registros[i],4);
             fwrite(strReg,4,1,f);
+//            printf("LAR: %08X\n",registros[4]);
+//            printf("MAR: %08X\n",registros[5]);
+//            printf("MBR: %08X\n\n",registros[6]);
         }
 
         // copio segmentos

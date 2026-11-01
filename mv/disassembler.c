@@ -3,8 +3,6 @@
 #include "estructuras.h"
 #include "funcionesAuxiliares.h"
 
-// MAURO -> AGREGAR -> MOSTRAR STRINS DEL KS AL PRINCIPIO, ANTES DE MOSTRAR EL RESTO
-// MAURO -> AGREGAR -> MOSTRAR MODIFICADORES DE OPERANDOS REGISTROS Y MEMORIA 
 
 char mnemonicos[32][5] = {
     "SYS",

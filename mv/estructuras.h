@@ -7,7 +7,7 @@
 #define CANT_SEGM 8
 
 typedef struct {
-    int16_t base, tamaño; // 2 bytes cada elemento
+    uint16_t base, tamaño; // 2 bytes cada elemento // ACTUALIZACIÓN 31/10 -> LOS HICE SIN SIGNO PARA ANALIZAR UN CASO DE FALLO DE TAMAÑOS DE SEGMENTO (SI EL TAMAÑO ES MAYOR O IGUAL A 0x8000 se vuelve negativo))
 } Segmento;
 
 void inicializarMemoria();

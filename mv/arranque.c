@@ -57,6 +57,7 @@ void inicializarParamSegment(){
         punterosLogicos[i] = indiceCeldas; // dado que los 2 primeros bytes siempre son 0, simplifico solo asignando offset
         strcpy(memoria + indiceCeldas,parametros[i]);
         indiceCeldas += strlen(parametros[i]);
+        indiceCeldas++; // strlen no cuenta el \0
     }
     offsetVectorParam = indiceCeldas;
 
@@ -78,8 +79,15 @@ void inicializarSegm(){
             y++;
             if (y == 0)
                 tablaSegm[y].base = 0;
-            else
-                tablaSegm[y].base = tablaSegm[y-1].base + tablaSegm[y-1].tamaño;
+            else{
+                int nuevaBase = tablaSegm[y-1].base + tablaSegm[y-1].tamaño;
+                if (nuevaBase > 65535){
+                    printf("Error: Memoria Insuficiente\n");
+                    exit(1);
+                    }
+                else
+                    tablaSegm[y].base = nuevaBase;
+            }
             tablaSegm[y].tamaño = vec[i];
             aux = y;
             aux = aux << 16;
@@ -114,8 +122,8 @@ void inicializarSegm(){
         }
     }
     for (y++;y<CANT_SEGM;y++){
-        tablaSegm[y].base = -1;
-        tablaSegm[y].tamaño = -1;
+        tablaSegm[y].base = 0xFFFF;
+        tablaSegm[y].tamaño = 0xFFFF;
     }
 
 //    26 -> CS (Puntero al inicio del Code Segment)
@@ -243,9 +251,10 @@ int main(int argc, char *argv[]){
             strcpy(parametros[0],archivoBin);
 
             indiceParam++;
-            while (indiceArg + indiceParam < argc)
+            while (indiceArg + indiceParam < argc){
                 strcpy(parametros[indiceParam],argv[indiceArg + indiceParam]);
                 indiceParam++;
+            }
 
             cantParam = indiceParam;
         }
