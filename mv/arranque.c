@@ -326,6 +326,7 @@ int main(int argc, char *argv[]){
                 if (disassembler)
                     mostrarAssembler(2,offsetEntryPoint);
 
+                pasoAPaso = 0;
                 procesa();
                 return 0;
             }

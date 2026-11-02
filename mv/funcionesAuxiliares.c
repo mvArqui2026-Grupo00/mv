@@ -106,10 +106,29 @@ void configurarStringBigEndian(char *cadena, unsigned int valor,int n){
         cadena[i] = (valor >> 8 * (n-1 -i)) & 0xFF;
 }
 
+/*
 int leerNumBigEndian(char *cadena, int n){
     unsigned int num = 0;
-    for (int i=0; i<n; i++)
-        num |= cadena[i] << 8 * (n-1 -i);
+    unsigned int aux;
+    int i = 0;
+    for (; i<n; i++)
+        num = num << 8;
+        num |= cadena[i];
+//        aux = (cadena[i]) << (8 * (n-1 -i));
+//        num |= aux; // & (0xFF );
+    return num;
+}
+*/
+
+unsigned int leerNumBigEndian(char cadena[], int n){
+    unsigned int num = 0;
+    unsigned int aux;
+    for (int i=0; i<n; i++){
+        aux = cadena[i];
+        aux = aux << (8 * (n-1 -i));
+        aux = aux & (0xFF << (8 * (n-1 -i)));
+        num |= aux;
+    }
     return num;
 }
 
@@ -128,6 +147,8 @@ void restaurarVmx(){
         if (strcmp(id,"VMI26") == 0 && version == 1){
             tamMemoria = leerNumBigEndian(stringTamMemoria,2);
             tamMemoria *= 1024;
+         //   printf("tamMem= %d\n",tamMemoria);
+            inicializarMemoria();
 
             // restauro registros
             char strReg[4];
@@ -135,22 +156,40 @@ void restaurarVmx(){
                 fread(strReg,4,1,f);
                 registros[i] = leerNumBigEndian(strReg,4);
             }
+           //  printf("anda reg\n");
 
             // restauro tablaSegm
-            char strSegm[4];
+//            char strSegm[4];
+            char strSegm[2];    
             for (int i=0; i<CANT_SEGM;i++){
-                fread(strSegm,4,1,f);
+                //fread(strSegm,4,1,f);
+                //tablaSegm[i].base = leerNumBigEndian(strSegm,2);
+                //tablaSegm[i].tamaño = leerNumBigEndian(strSegm+2,2);
+                fread(strSegm,2,1,f);
                 tablaSegm[i].base = leerNumBigEndian(strSegm,2);
-                tablaSegm[i].tamaño = leerNumBigEndian(strSegm+2,2);
+//                tablaSegm[i].base = abs(leerNumBigEndian(strSegm,2));
+                fread(strSegm,2,1,f);
+                tablaSegm[i].tamaño = leerNumBigEndian(strSegm,2);
+//                tablaSegm[i].tamaño = abs(leerNumBigEndian(strSegm,2));
+
+
+//                printf("base:%04X\n",tablaSegm[i].base);
+//                printf("tamanio:%04X\n",tablaSegm[i].tamaño);
+//                printf("\n");
             }
+            // printf("anda tablaSegm\n");
 
             // restauro memoria
-            char *charByte;
+            char charByte[1];
             for (int i=0; i<tamMemoria;i++){
                 fread(charByte,1,1,f);
-                memoria[i] = *charByte;
+                memoria[i] = charByte[0];
+               // printf("i: %d\n",i);
             }
+           //  printf("anda mem\n");
 
+           mostrarRegistros();
+//           mostrarTablaSegm();
         }
         else{
             printf("Error, formato de archivo imagen inválido\n");

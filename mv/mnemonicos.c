@@ -234,7 +234,7 @@ void stringWrite(){
         leerDeMemoria();
         caracter = registros[6];
     }
-    printf("\n");
+//    printf("\n");
 }
 
 void stringRead(){

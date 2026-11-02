@@ -72,19 +72,23 @@ void paso(){
 
     funciones[opc]();
 
-    if (pasoAPaso){
+    // /*
+    if (pasoAPaso)
         int fueBreakpoint = 0;
 
     if (registros[1] == 0)                      // OPC 0 = SYS
-        if (leerOperando(registros[2]) == 0xF)  // llamada 0xF = breakpoint
+        if (registros[2] == 0xF)  // llamada 0xF = breakpoint
             fueBreakpoint = 1;
 
     if (!fueBreakpoint)
         breakPoint();
+
+    //    if (variableBooleanaBreakpoint)
+    //       breakpoint();
+    // */
+
 }
-//    if (variableBooleanaBreakpoint)
-//       breakpoint();
-}
+
 
 void procesa(){
     // sigue mientras el IP apunte dentro del segmento de código y no haya ocurrido un error
