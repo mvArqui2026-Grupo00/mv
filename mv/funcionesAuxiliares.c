@@ -188,7 +188,7 @@ void restaurarVmx(){
             }
            //  printf("anda mem\n");
 
-           mostrarRegistros();
+//           mostrarRegistros();
 //           mostrarTablaSegm();
         }
         else{

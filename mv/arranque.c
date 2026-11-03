@@ -322,11 +322,11 @@ int main(int argc, char *argv[]){
                 return 1;
             else{
                 restaurarVmx();
+                inicializarPunteroFunciones();
 
                 if (disassembler)
                     mostrarAssembler(2,offsetEntryPoint);
 
-                pasoAPaso = 0;
                 procesa();
                 return 0;
             }

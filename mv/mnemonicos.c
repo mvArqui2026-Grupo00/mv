@@ -217,6 +217,7 @@ void stringWrite(){
     comprobarFalloSegmento();
     calcularPunteroFisico(1);            // MAR, 1 byte (tamaño de caracter)
     leerDeMemoria();
+
     caracter = registros[6];             // MBR
 
     dirFisica = registros[5] & 0xFFFF;

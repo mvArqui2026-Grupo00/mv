@@ -70,9 +70,10 @@ void paso(){
     registros[5] = mar;
     registros[6] = mbr;
 
+
     funciones[opc]();
 
-    // /*
+     /*
     if (pasoAPaso)
         int fueBreakpoint = 0;
 
@@ -85,7 +86,7 @@ void paso(){
 
     //    if (variableBooleanaBreakpoint)
     //       breakpoint();
-    // */
+     */
 
 }
 
